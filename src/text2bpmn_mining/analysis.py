@@ -9,12 +9,20 @@ import pm4py
 
 from .eventlog import case_table, to_pm4py
 
-ALGOS = ("Inductive (IMf 0.2)", "Heuristics (0.9)")
+ALGOS = ("Alpha", "Heuristics (0.9)", "Inductive (IMf 0.2)")
 
 
 # ---------------------------------------------------------------- Khám phá
 def discover(events: pd.DataFrame, scenarios, out_dir: str | None = None) -> pd.DataFrame:
-    """DFG, Inductive Miner và Heuristics Miner cho từng kịch bản, kèm bốn chỉ số chất lượng (in-sample)."""
+    """DFG, Alpha Miner, Heuristics Miner và Inductive Miner cho từng kịch bản, kèm bốn chỉ số chất lượng (in-sample).
+
+    - Alpha: dựng quan hệ footprint (→, ||, #) từ DFG rồi tạo place cho các cặp tập (A, B) với A → B.
+      Không xử lý được vòng lặp độ dài 1 và nhiễu.
+    - Heuristics: giữ cạnh a→b khi độ phụ thuộc (|a>b|−|b>a|)/(|a>b|+|b>a|+1) ≥ 0,9;
+      vòng lặp a→a khi |a>a|/(|a>a|+1) ≥ 0,9. Chịu nhiễu, không bảo đảm sound.
+    - Inductive (IMf): chia log đệ quy theo cắt tuần tự / lựa chọn / song song / vòng lặp,
+      lọc cạnh hiếm (< 20% cạnh mạnh nhất). Luôn sound.
+    """
     rows = []
     for s in scenarios:
         L = to_pm4py(events[events.scenario == s])
@@ -22,8 +30,12 @@ def discover(events: pd.DataFrame, scenarios, out_dir: str | None = None) -> pd.
             dfg, sa, ea = pm4py.discover_dfg(L)
             pm4py.save_vis_dfg(dfg, sa, ea, f"{out_dir}/fig_dfg_{s}.png", rankdir="TB")
         for algo in ALGOS:
-            net, im, fm = (pm4py.discover_petri_net_inductive(L, noise_threshold=0.2) if algo[0] == "I"
-                           else pm4py.discover_petri_net_heuristics(L, dependency_threshold=0.9))
+            if algo.startswith("Alpha"):
+                net, im, fm = pm4py.discover_petri_net_alpha(L)
+            elif algo.startswith("Heuristics"):
+                net, im, fm = pm4py.discover_petri_net_heuristics(L, dependency_threshold=0.9)
+            else:
+                net, im, fm = pm4py.discover_petri_net_inductive(L, noise_threshold=0.2)
             fit = pm4py.fitness_token_based_replay(L, net, im, fm)
             rows.append(dict(scenario=s, thuat_toan=algo, fitness=round(fit["log_fitness"], 3),
                              pct_vet_khop=round(fit["perc_fit_traces"], 1),

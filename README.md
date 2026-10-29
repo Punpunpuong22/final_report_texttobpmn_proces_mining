@@ -10,7 +10,7 @@ Phần 2 nhận chính các tệp đó và chạy một pipeline khai phá quy t
 BPMN (text2BPMN) ─┬─► 1. Kiểm tra cấu trúc, soundness (Woflan)
                   └─► 2. Nhật ký sự kiện (log text2BPMN hoặc mô phỏng 4 kịch bản)
                         ├─► 3. Thống kê mô tả: KPI, biến thể, thời gian làm việc / lưu trú
-                        ├─► 4. Khám phá: DFG, Inductive Miner, Heuristics Miner
+                        ├─► 4. Khám phá: DFG, Alpha, Heuristics, Inductive Miner
                         ├─► 5. Tuân thủ: alignment + luật nghiệp vụ
                         ├─► 6. Điểm nghẽn: thời gian chờ, tải từng làn, hàng đợi
                         ├─► 7. Nguyên nhân trễ hạn: cây quyết định
@@ -56,7 +56,7 @@ text2bpmn-process-mining/
 │   ├── bpmn.py         # đọc BPMN, soundness, dò lỗi cấu trúc, ghi BPMN TO-BE
 │   ├── simulation.py   # mô phỏng sự kiện rời rạc dựa trên token, cài sai lệch
 │   ├── eventlog.py     # đọc log text2BPMN (CSV/XES), chuẩn hoá cột, kiểm tra chất lượng
-│   ├── analysis.py     # khám phá, alignment, luật, điểm nghẽn, cây quyết định
+│   ├── analysis.py     # khám phá (Alpha, Heuristics, Inductive), alignment, luật, điểm nghẽn, cây quyết định
 │   ├── whatif.py       # so sánh AS-IS / từng thay đổi / TO-BE, Wilcoxon
 │   ├── plots.py        # biểu đồ
 │   ├── pipeline.py     # lớp Pipeline: step1 … step8, run()

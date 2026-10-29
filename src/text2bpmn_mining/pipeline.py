@@ -92,7 +92,7 @@ class Pipeline:
 
     # ------------------------------------------------------------ Bước 4
     def step4_discovery(self) -> dict:
-        """DFG, Inductive Miner, Heuristics Miner và bốn chỉ số chất lượng."""
+        """DFG, Alpha Miner, Heuristics Miner, Inductive Miner và bốn chỉ số chất lượng."""
         disc = analysis.discover(self.events, self.scen, self.out)
         disc.to_csv(self._p("tab_discovery.csv"), index=False)
         self.r["step4"] = dict(discovery=disc, dfg_images=[self._p(f"fig_dfg_{s}.png") for s in self.scen])
