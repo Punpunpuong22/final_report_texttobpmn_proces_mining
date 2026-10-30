@@ -180,7 +180,8 @@ def serialize_step(p, i: int) -> dict:
         d["facts"] = [("Thay đổi", " + ".join(s["changes"]) or "–"), ("BPMN TO-BE sound", "Có" if s["tobe_sound"] else "Không"),
                       ("Fitness log TO-BE", s["fitness_tobe"])]
         for _, row in w.iterrows():
-            d["notes"].append(f"{row['scenario']}: lưu trú TB {row['asis_tb']} → {row['tobe_tb']} phút (giảm {row['muc_giam']}, Wilcoxon p = {row['wilcoxon_p']}).")
+            d["notes"].append(f"{row['scenario']}: lưu trú TB {row['asis_tb']} → {row['tobe_tb']} phút (giảm {row['muc_giam']}, "
+                              f"Wilcoxon p = {row['wilcoxon_p']}).".replace(".", ",").rstrip(",") + ".")
         d["tables"] += [table(s["summary"], True, "AS-IS, từng thay đổi và TO-BE (trung bình ± CI 95%)"),
                         table(w, False, "Kiểm định Wilcoxon theo cặp"),
                         table(s["wait_compare"], True, f"Thời gian chờ trước và sau ({s['verify_scenario']})")]
