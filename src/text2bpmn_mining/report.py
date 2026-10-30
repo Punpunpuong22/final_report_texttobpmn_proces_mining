@@ -188,6 +188,7 @@ def serialize_step(p, i: int) -> dict:
                         table(s["wait_compare"], True, f"Thời gian chờ trước và sau ({s['verify_scenario']})")]
         d["images"] = [_img(out, "fig_bpmn_TO_BE.png", "BPMN TO-BE")]
         d["downloads"] = [os.path.basename(s["tobe_path"])]
+        d["n_rep"] = p.cfg.n_rep
         d["legend"] = {"C0": "Sửa cấu trúc BPMN (xoá luồng thừa)", "C1": "Thêm 1 người cho làn nghẽn",
                        "C2": "Giả định giảm 50% làm lại ở bước làm lại nhiều nhất",
                        "C3": f"Tự động hoá bước {s['automate']} (đổi thành serviceTask)" if s["automate"] else "Tự động hoá một bước"}

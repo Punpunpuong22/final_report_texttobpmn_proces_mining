@@ -130,11 +130,17 @@ figcaption { font-size: 12.5px; color: var(--muted) }
 details.box { border: 1px solid var(--line); border-radius: 8px; min-width: 0 }
 details.box > summary { padding: 10px 12px }
 details.box > .tbl, details.box > pre { margin: 0 12px 12px }
+.story { display: flex; flex-direction: column; gap: 12px; background: var(--paper); border-radius: 12px; padding: 14px 16px }
+.story h3 { font-size: 15px } .story ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px }
+.hb { display: grid; grid-template-columns: 170px minmax(0, 1fr) 118px; gap: 8px; align-items: center; font-size: 13.5px }
+.hb .track { height: 16px; background: var(--line); border-radius: 4px; overflow: hidden } .hb .fill { height: 100%; background: var(--accent) }
+.hb .fill.alt { background: var(--muted) } .hb .v { text-align: right; font-family: var(--font-mono); font-size: 12.5px }
+.verdict { font-size: 14.5px; border-left: 3px solid var(--good); padding: 4px 0 4px 10px }
 .waiting { color: var(--muted); font-size: 13.5px; border: 1px dashed var(--line); border-radius: 8px; padding: 12px }
 .note-box { font-size: 14px; background: var(--warn-tint); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px }
 footer { font-size: 12.5px; color: var(--muted) }
 footer a { color: inherit; overflow-wrap: anywhere }
-@media (max-width: 640px) { .params { grid-template-columns: 1fr } section.card { padding: 14px } h1 { font-size: 26px } }
+@media (max-width: 640px) { .hb { grid-template-columns: 96px minmax(0, 1fr) 92px } .params { grid-template-columns: 1fr } section.card { padding: 14px } h1 { font-size: 26px } }
 </style>
 
 <div class="wrap">
@@ -939,8 +945,8 @@ const STEPS = [
   ["Khám phá", "Chỉ nhìn nhật ký, quy trình thực tế trông ra sao?", "DFG; Alpha, Heuristics, Inductive Miner; chấm fitness, precision, generalization, simplicity."],
   ["Tuân thủ", "Vận hành lệch khỏi BPMN ở đâu, mức nào?", "Alignment với BPMN; đếm bước bị bỏ, bước làm thừa; kiểm tra luật nghiệp vụ."],
   ["Điểm nghẽn", "Hồ sơ bị giữ lại ở bước nào, làn nào?", "Tách thời gian chờ và xử lý; xếp hạng theo tổng phút chờ; mức tải từng làn."],
-  ["Nguyên nhân", "Đặc điểm nào đi kèm với trễ hạn?", "Cây quyết định sâu 3 trên số hồ sơ tồn lúc nộp, số lần làm lại, kết quả hồ sơ."],
-  ["BPMN cải tiến", "Sửa gì thì nhanh hơn thật, nhờ thay đổi nào?", "Sinh BPMN TO-BE, mô phỏng lại 10 lần trên cùng dòng hồ sơ, kiểm định Wilcoxon, tách tác dụng từng thay đổi."],
+  ["Dấu hiệu trễ hạn", "Hồ sơ bị trễ có điểm gì chung?", "Đánh dấu hồ sơ trễ / đúng hạn, ghi 3 đặc điểm của mỗi hồ sơ, rồi để máy tìm câu hỏi có/không tách hai nhóm tốt nhất."],
+  ["BPMN cải tiến", "Sửa gì thì nhanh hơn thật, và nhờ thay đổi nào?", "Sửa sơ đồ theo các phát hiện, cho cùng dòng hồ sơ chạy qua sơ đồ cũ và mới 10 lần, so từng cặp."],
 ];
 const COLS = { so_ho_so: "Số hồ sơ", so_bien_the: "Số biến thể", lam_viec_tb: "Làm việc TB (phút)", cycle_tb: "Lưu trú TB (phút)",
   cycle_p90: "Lưu trú P90 (phút)", ty_le_tre_han: "Tỷ lệ trễ hạn", lam_lai_tb: "Làm lại TB", scenario: "Kịch bản", thuat_toan: "Thuật toán",
@@ -980,11 +986,83 @@ function renderTable(t, open) {
   if (open) d.open = true;
   return d;
 }
+/* ---------- Bước 7–8: phần “Đọc kết quả” bằng lời thường ---------- */
+const hbar = (label, frac, text, alt) => el("div", { class: "hb" }, el("span", { text: label }),
+  el("div", { class: "track" }, el("div", { class: "fill" + (alt ? " alt" : ""), style: `width:${Math.max(0, Math.min(1, frac)) * 100}%` })), el("span", { class: "v", text }));
+const numOf = v => typeof v === "number" ? v : parseFloat(String(v).split("±")[0]);
+const SC_NAME = { S1_suon_se: "S1 suôn sẻ", S2_truc_trac: "S2 trục trặc", S3_qua_tai: "S3 quá tải", S4_vi_pham: "S4 vi phạm" };
+function story7(d) {
+  const box = el("div", { class: "story" }, el("h3", { text: "Đọc kết quả" }));
+  const s3 = p2.steps.find(x => x.n === 3), sla = s3?.facts.find(f => /Thời hạn/.test(f.label))?.value || "giả định";
+  box.append(el("p", { class: "small", text: "Máy làm gì:" }), el("ol", {},
+    el("li", { text: `Đánh dấu mỗi hồ sơ trễ hay đúng hạn, so với thời hạn ${sla} (đặt ở Bước 3).` }),
+    el("li", { text: "Ghi 3 đặc điểm của mỗi hồ sơ: lúc nộp có bao nhiêu hồ sơ khác đang chờ trong hệ thống (đếm hồ sơ đã nộp mà chưa xong), phải làm lại mấy lần, kết quả cuối (duyệt, từ chối…)." }),
+    el("li", { text: "Cho máy tự tìm câu hỏi có/không tách hồ sơ trễ và đúng hạn tốt nhất, hỏi tối đa 3 lần (cây quyết định)." })));
+  const t = d.tables.find(x => /tồn lúc nộp/.test(x.title));
+  if (t) {
+    const lab = l => String(l).replace(/^\(-1, 2\]$/, "0–2").replace(/^\((\d+), (\d+)\]$/, (m, a, b) => +b >= 1000 ? `trên ${a}` : `${+a + 1}–${b}`);
+    box.append(el("p", { class: "small", text: "Tỷ lệ hồ sơ trễ theo số hồ sơ đang chờ lúc nộp:" }),
+      el("div", { style: "display:flex;flex-direction:column;gap:6px" }, t.rows.map(r => hbar(`${lab(r[0])} hồ sơ`, r[1], `${Math.round(r[1] * 100)}% của ${r[2]}`))));
+  }
+  const m = d.code && d.code.match(/(\w+) <= ([\d.]+)/);
+  if (m && m[1] === "ton_luc_nop") {
+    const ba = d.facts.find(f => /Balanced/.test(f.label))?.value;
+    box.append(el("p", { class: "verdict", text: `Câu hỏi máy chọn đầu tiên: “Lúc nộp có hơn ${Math.floor(+m[2])} hồ sơ đang chờ không?” Có thì phần lớn trễ, không thì phần lớn đúng hạn. Dùng các câu hỏi này đoán lại những hồ sơ để riêng ra, máy đúng khoảng ${typeof ba === "number" ? Math.round(ba * 100) + "%" : "–"} số lần.` }));
+  } else if (!d.code) box.append(el("p", { class: "verdict", text: `Gần như không có hồ sơ trễ (${d.facts.find(f => /Tỷ lệ/.test(f.label))?.value}), không đủ để tìm dấu hiệu.` }));
+  box.append(el("p", { class: "small muted", text: "Đây là dấu hiệu đi kèm, chưa phải nguyên nhân chắc chắn: máy chỉ thấy hai thứ hay xuất hiện cùng nhau. Bước 8 kiểm tra bằng cách sửa thật rồi chạy lại." }));
+  return box;
+}
+const SHORT = { C0: "sửa sơ đồ", C1: "+1 người", C2: "giảm làm lại", C3: "tự động hoá" };
+const planName = x => x === "AS-IS" ? "Hiện tại (AS-IS)" : /^TO-BE/.test(x) ? "Sau cải tiến (TO-BE)" : x.replace(/^chỉ (C\d)$/, (m, c) => `Chỉ ${c}: ${SHORT[c] || ""}`);
+function story8(d) {
+  const box = el("div", { class: "story" }, el("h3", { text: "Đọc kết quả" }));
+  const used = String(d.facts.find(f => /Thay đổi/.test(f.label))?.value || "").split(" + ").filter(Boolean);
+  const WHY = { C0: "vì Bước 1 thấy sơ đồ có lỗi cấu trúc", C1: "vì Bước 6 thấy làn này nghẽn nhất", C2: "vì Bước 5 thấy bước này bị làm lại nhiều nhất; mức giảm 50% là giả định", C3: "đề xuất của nhóm: bước này có thể để phần mềm làm" };
+  box.append(el("p", { class: "small", text: "Các thay đổi, mỗi cái gắn với một phát hiện trước đó:" }),
+    el("ul", { class: "notes" }, used.map(c => el("li", { text: `${c} · ${d.legend?.[c] || ""} — ${WHY[c] || ""}` }))));
+  const n = d.n_rep || 10;
+  box.append(el("p", { class: "small", text: "Cách kiểm chứng:" }), el("ol", {},
+    el("li", { text: "Sửa sơ đồ theo các thay đổi trên, kiểm tra sơ đồ mới vẫn chạy được tới cùng." }),
+    el("li", { text: `Cho cùng một dòng hồ sơ (cùng giờ nộp, cùng thời gian từng bước) đi qua sơ đồ cũ và sơ đồ mới. Lặp ${n} lần với ${n} bộ số ngẫu nhiên khác nhau.` }),
+    el("li", { text: "So từng cặp (lần 1 cũ với lần 1 mới, …). Kiểm định Wilcoxon cho biết sơ đồ mới nhanh hơn có đều đặn qua các cặp hay chỉ do may." }),
+    el("li", { text: "Thử riêng từng thay đổi (ablation) để biết cái nào thật sự có tác dụng." })));
+  const sum = d.tables.find(x => /AS-IS/.test(x.title)), w = d.tables.find(x => /Wilcoxon/.test(x.title));
+  if (sum) {
+    const ci = sum.columns.indexOf("scenario"), pi = sum.columns.indexOf("phuong_an"), vi = sum.columns.indexOf("cycle_tb");
+    const by = {}; sum.rows.forEach(r => (by[r[ci]] = by[r[ci]] || []).push([r[pi], numOf(r[vi])]));
+    Object.entries(by).forEach(([sc, rows]) => {
+      const asis = rows.find(r => r[0] === "AS-IS")?.[1], tobe = rows.find(r => /^TO-BE/.test(r[0])), max = Math.max(...rows.map(r => r[1]));
+      const singles = rows.filter(r => /^chỉ/.test(r[0])), best = singles.slice().sort((a, b) => a[1] - b[1])[0];
+      const wr = w?.rows.find(r => r[0] === sc), pv = wr ? numOf(wr[w.columns.indexOf("wilcoxon_p")]) : null;
+      const allPairs = pv != null && pv <= 2 / 2 ** n * 1.05;
+      box.append(el("div", { style: "display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px" },
+        el("p", { style: "font-weight:600;font-size:14px", text: `${SC_NAME[sc] || sc}: thời gian từ lúc nộp đến lúc xong, trung bình` }),
+        ...rows.map(r => hbar(planName(r[0]), r[1] / max, `${nf.format(r[1])}′`, r[0] !== "AS-IS" && !/^TO-BE/.test(r[0]))),
+        el("p", { class: "verdict", text: `${asis != null && tobe ? `Trước ${nf.format(asis)} → sau ${nf.format(tobe[1])} phút (giảm ${Math.round((1 - tobe[1] / asis) * 100)}%). ` : ""}` +
+          (best ? `Làm riêng từng thay đổi, ${planName(best[0]).replace("Chỉ ", "")} có tác dụng lớn nhất. ` : "") +
+          (pv == null ? "" : allPairs ? `Cả ${n}/${n} lần chạy, sơ đồ mới đều nhanh hơn (Wilcoxon p = ${nf3.format(pv)}).` :
+            pv < 0.05 ? `Đa số lần chạy sơ đồ mới nhanh hơn; khả năng do may dưới 5% (p = ${nf3.format(pv)}).` : `Chưa đủ chắc chắn: p = ${nf3.format(pv)} ≥ 0,05.`) })));
+    });
+  }
+  box.append(el("p", { class: "small muted", text: "Mọi con số là kết quả mô phỏng dưới giả định ở bước 3 của Phần 1; C2 giảm 50% làm lại là giả định về tác dụng của biện pháp." }));
+  return box;
+}
+
 function renderStep(i, data, st) {
   const [title, q, how] = STEPS[i - 1];
   const sec = el("section", { class: "card", id: `step-${i}` },
     el("div", { class: "card-head" }, el("div", {}, el("h2", {}, el("span", { class: "num", text: `Bước ${i}` }), title), el("p", { class: "small muted", text: q }))));
   if (!data) { sec.append(el("p", { class: "waiting", text: st === "running" ? "Đang chạy…" : how })); return sec; }
+  let host = sec;
+  if (i === 7 || i === 8) {
+    sec.append(i === 7 ? story7(data) : story8(data));
+    if (i === 8 && data.images.length) sec.append(el("div", { class: "figs" }, data.images.map(im => el("figure", {}, el("div", { class: "im" }, el("img", { src: p2.img(im.file), alt: im.label, loading: "lazy" })), el("figcaption", { text: im.label })))));
+    if (data.downloads && p2.files) sec.append(el("div", { class: "row" }, data.downloads.map(f => el("a", { class: "btn", href: p2.files(f), text: `Tải ${f}` }))));
+    host = el("div", { style: "display:flex;flex-direction:column;gap:12px;padding:0 12px 12px" });
+    sec.append(el("details", { class: "box" }, el("summary", { text: "Chi tiết kỹ thuật (bảng số, luật của cây, kiểm định)" }), host));
+    data = { ...data, images: i === 8 ? [] : data.images, downloads: null };
+  }
+  const sec0 = sec; { const sec = host;
   sec.append(el("dl", { class: "facts" }, data.facts.map(f => el("div", { class: "fact" }, el("dt", { text: f.label }), el("dd", { text: typeof f.value === "number" ? nf3.format(f.value) : f.value })))));
   if (data.notes.length) sec.append(el("ul", { class: "notes" }, data.notes.map(n => el("li", { text: n }))));
   if (data.legend) sec.append(el("div", { class: "legend" }, Object.entries(data.legend).map(([k, v]) => el("span", { text: `${k}: ${v}` }))));
@@ -992,7 +1070,8 @@ function renderStep(i, data, st) {
   data.tables.forEach((t, k) => sec.append(renderTable(t, k === 0)));
   if (data.code) sec.append(el("details", { class: "box" }, el("summary", { text: "Luật của cây quyết định" }), el("pre", { text: data.code })));
   if (data.downloads && p2.files) sec.append(el("div", { class: "row" }, data.downloads.map(f => el("a", { class: "btn", href: p2.files(f), text: `Tải ${f}` }))));
-  return sec;
+  }
+  return sec0;
 }
 function renderP2(running) {
   const box = $("#steps"); box.replaceChildren();
