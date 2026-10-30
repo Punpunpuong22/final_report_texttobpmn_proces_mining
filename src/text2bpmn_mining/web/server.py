@@ -127,8 +127,27 @@ def create_app(work_dir: str | None = None, samples_dir: str | None = None) -> F
                 v = min(hi, v)
             return v
 
+        import json
+        from ..config import DEFAULT_SCENARIOS
+        extra = {}
         try:
-            cfg = Config(n_cases=num("n_cases", 200, int, 20, 1000), n_rep=num("n_rep", 10, int, 2, 30),
+            prm = json.loads(request.form.get("params") or "{}")
+        except ValueError:
+            return jsonify(error="Tham số thời gian chuẩn không đọc được."), 400
+        if prm:
+            sc = {k: dict(v) for k, v in DEFAULT_SCENARIOS.items()}
+            gap, gap3 = float(prm.get("gap", 40)), float(prm.get("gap_overload", 25))
+            s1 = {k: float(v) for k, v in prm.get("S1", {}).items() if k in ("p_positive", "p_rework")}
+            s2 = {k: float(v) for k, v in prm.get("S2", {}).items() if k in ("p_positive", "p_rework")}
+            sc["S1_suon_se"].update(s1, mean_gap=gap)
+            sc["S2_truc_trac"].update(s2, mean_gap=gap)
+            sc["S3_qua_tai"].update(s1, mean_gap=gap3)        # quá tải = S1, chỉ đổi nhịp đến
+            sc["S4_vi_pham"].update(s1, mean_gap=gap)         # vi phạm = S1, cài 10% sai lệch
+            extra = dict(scenarios=sc,
+                         task_minutes={str(k): float(v) for k, v in prm.get("task_minutes", {}).items() if float(v) > 0},
+                         capacity={str(k): max(1, int(v)) for k, v in prm.get("capacity", {}).items()} or None)
+        try:
+            cfg = Config(**extra, n_cases=num("n_cases", 200, int, 20, 1000), n_rep=num("n_rep", 10, int, 2, 30),
                          sla_minutes=num("sla", None, float, 1), seed=num("seed", 42, int),
                          part1_log_dir=os.path.join(jdir, "logs") if n_logs else os.path.join(jdir, "_no_logs"),
                          part1_logs_as="doi_chieu" if request.form.get("logs_as") == "doi_chieu" else "log")

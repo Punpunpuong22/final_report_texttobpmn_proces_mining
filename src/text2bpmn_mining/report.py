@@ -79,12 +79,13 @@ def serialize_step(p, i: int) -> dict:
         if cal is not None:
             lv = cal["lam_viec"]
             vn = lambda x: f"{x:.1f}".replace(".", ",")
-            d["notes"].append("Nhật ký Phần 1 chỉ có thời gian làm việc, chưa có hàng đợi, nên dùng để đối chiếu; "
-                              "Phần 2 mô phỏng lại 4 kịch bản trên cùng BPMN, thêm hồ sơ đến theo thời gian và số người mỗi làn.")
+            d["notes"].append("Nhật ký Phần 1 chỉ có thời gian làm việc, chưa có hàng đợi. Phần 2 mô phỏng lại trên cùng BPMN và cùng "
+                              "thời gian chuẩn, thêm hồ sơ đến theo thời gian và số người mỗi làn. Bảng đối chiếu là kiểm tra nhất quán giữa hai "
+                              "bộ mô phỏng (chênh lệch chỉ do ngẫu nhiên), không phải kiểm chứng với thực tế.")
             lv = lv.sort_values("kich_ban_phan2")
             for sc, row in lv.iterrows():
                 d["notes"].append(f"{sc} ↔ {row['kich_ban_phan2']}: làm việc {vn(row['lam_viec_text2bpmn'])} phút (Phần 1) "
-                                  f"và {vn(row['lam_viec_phan2'])} phút (Phần 2), lệch {row['chenh_lech']:+.0%}.")
+                                  f"và {vn(row['lam_viec_phan2'])} phút (Phần 2), lệch {row['chenh_lech'] * 100:+.1f}%.".replace(".", ",", 1).replace(",%", "%"))
             d["facts"][0] = ("Nguồn log", "bộ mô phỏng của Phần 2 (đã đối chiếu với nhật ký Phần 1)")
             d["tables"] += [table(lv, True, "Đối chiếu thời gian làm việc mỗi hồ sơ với Phần 1"),
                             table(cal["ty_trong"], True, "Đối chiếu tỷ trọng thời gian từng bước")]

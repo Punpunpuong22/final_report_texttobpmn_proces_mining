@@ -49,7 +49,7 @@ Kiểm tra nhanh mã nguồn: `python tests/test_pipeline.py` (hoặc `pytest -q
 ## Giao diện web: text2BPMN đầy đủ (Phần 1 + Phần 2)
 
 Một trang chạy cả chuỗi: **Phần 1** viết quy trình bằng lời → danh sách bước → sơ đồ BPMN (kéo thả, đổi làn,
-sửa tên, kiểm tra lỗi nhanh) → thử 200 hồ sơ với hai kịch bản “Việc suôn sẻ” / “Nhiều trục trặc” → xuất nhật ký
+sửa tên, kiểm tra lỗi nhanh) → **nhập thời gian chuẩn từng bước, tỷ lệ kịch bản, số người mỗi làn, kèm nguồn số liệu** (chưa có số đo thì trang điền giả định theo loại việc và ghi rõ là giả định) → thử 200 hồ sơ với hai kịch bản “Việc suôn sẻ” / “Nhiều trục trặc” → xuất nhật ký
 CSV/XES; **Phần 2** nhận thẳng sơ đồ và nhật ký đó, chạy tám bước khai phá quy trình và hiện kết quả từng bước
 (chỉ số, nhận xét, hình, bảng, BPMN TO-BE, tải `.zip`). Có thể mở sẵn một tệp `.bpmn` hoặc dùng nhật ký có sẵn.
 
@@ -59,7 +59,7 @@ CSV/XES; **Phần 2** nhận thẳng sơ đồ và nhật ký đó, chạy tám 
 | Máy cá nhân: `PYTHONPATH=src python -m text2bpmn_mining.web` → http://127.0.0.1:8050 | như trên | như trên |
 | `docs/demo.html` (mở trực tiếp, không cần máy chủ) | như trên | kết quả chạy sẵn cho 3 sơ đồ mẫu |
 
-Ở Bước 2, nhật ký của Phần 1 (chỉ có thời gian làm việc) được dùng để **đối chiếu**: bộ mô phỏng của Phần 2 chạy
+Phần 2 dùng đúng các con số ở bước thời gian chuẩn. Ở Bước 2, nhật ký của Phần 1 (chỉ có thời gian làm việc) được dùng để **kiểm tra nhất quán** (hai bộ mô phỏng cùng giả định phải cho kết quả gần nhau; đây không phải kiểm chứng với thực tế): bộ mô phỏng của Phần 2 chạy
 trên cùng BPMN phải cho thời gian làm việc và tỷ trọng từng bước khớp với Phần 1, rồi mới thêm hồ sơ đến theo thời
 gian và số người mỗi làn để có hàng đợi (`Config(part1_logs_as="doi_chieu")`). Nhật ký thật tải lên thì được dùng
 trực tiếp (`part1_logs_as="log"`, mặc định khi chạy notebook).

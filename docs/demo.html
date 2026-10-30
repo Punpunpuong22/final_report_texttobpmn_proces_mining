@@ -90,6 +90,8 @@ pre { font: 12.5px/1.5 var(--font-mono); background: var(--paper); border: 1px s
 
 /* Bảng */
 .tbl { overflow-x: auto }
+.tbl input[type=number] { width: 90px; padding: 6px 8px } .tbl select { font: 13px var(--font-sans); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px }
+.chip { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--warn-tint); color: var(--ink) } .chip.ok { background: var(--good-tint) }
 table { border-collapse: collapse; font-size: 13px; width: 100% }
 th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
 th { font-weight: 600; color: var(--muted); font-size: 12px; white-space: nowrap }
@@ -186,38 +188,46 @@ x1 -> v1 "Không"</pre><p class="small muted" style="margin-top:6px">Phần tử
       <ul class="lint" id="lint" hidden></ul>
     </section>
 
+    <section class="card" id="s-time">
+      <div class="card-head"><div><h2><span class="num">3</span>Thời gian chuẩn và giả định</h2>
+        <p class="small muted">Mô phỏng chỉ đúng bằng các con số ở đây. Chưa có số đo thì trang điền giả định theo loại việc và ghi rõ là giả định; hãy thay bằng số bấm giờ, số từ phần mềm một cửa hoặc thời hạn trong văn bản.</p></div>
+        <div class="row"><button id="tp-reset" type="button" disabled>Về giả định mặc định</button></div></div>
+      <div id="tp-body" style="display:flex;flex-direction:column;gap:14px"><p class="waiting">Cần sơ đồ ở bước 2.</p></div>
+    </section>
+
     <section class="card" id="s3">
-      <div class="card-head"><div><h2><span class="num">3</span>Thử với nhiều hồ sơ</h2>
-        <p class="small muted">Chạy hồ sơ qua sơ đồ theo hai kịch bản. Số phút là thời gian làm việc; thời gian chờ được đo ở Phần 2.</p></div></div>
+      <div class="card-head"><div><h2><span class="num">4</span>Thử với nhiều hồ sơ</h2>
+        <p class="small muted">Chạy hồ sơ qua sơ đồ theo hai kịch bản, dùng thời gian và tỷ lệ ở bước 3. Số phút là thời gian làm việc; thời gian chờ được đo ở Phần 2.</p></div></div>
       <div class="row">
         <label class="small muted" style="display:flex;align-items:center;gap:8px">Số hồ sơ <input type="number" id="ncases" value="200" min="20" max="1000" style="width:96px"></label>
         <button id="sim-ok" type="button" disabled>Việc suôn sẻ</button>
         <button id="sim-bad" type="button" disabled>Nhiều trục trặc</button>
         <span class="status" id="sim-note" role="status"></span>
       </div>
-      <p class="small muted">Việc suôn sẻ: 90% hồ sơ đi nhánh thuận (đạt, đồng ý, còn hàng), 5% khả năng làm lại mỗi bước. Nhiều trục trặc: chỉ 30% đi nhánh thuận, 33% khả năng làm lại.</p>
       <div class="sims" id="sims"></div>
       <div class="note-box" id="sim-compare" hidden></div>
     </section>
 
     <section class="card" id="s4">
-      <div class="card-head"><div><h2><span class="num">4</span>Xuất nhật ký sự kiện</h2>
+      <div class="card-head"><div><h2><span class="num">5</span>Xuất nhật ký sự kiện</h2>
         <p class="small muted">Mỗi kịch bản là một nhật ký: mỗi dòng là một lần làm một bước của một hồ sơ, có giờ bắt đầu, giờ xong, người làm.</p></div>
         <div class="row"><label class="btn live-only">Dùng nhật ký có sẵn<input type="file" id="own-logs" accept=".csv,.xes" multiple hidden></label><button id="dl-csv" type="button" disabled>Tải CSV</button><button class="primary" id="dl-zip" type="button" disabled>Tải BPMN + nhật ký (.zip)</button></div></div>
-      <div id="log-preview"><p class="waiting">Chạy ít nhất một kịch bản ở bước 3 để có nhật ký.</p></div>
+      <div id="log-preview"><p class="waiting">Chạy ít nhất một kịch bản ở bước 4 để có nhật ký.</p></div>
     </section>
   </div>
 
   <!-- ========================= PHẦN 2 ========================= -->
   <div class="part" id="p2">
     <div class="part-head"><span class="tag">Phần 2</span><h2>Khai phá quy trình trên BPMN và nhật ký vừa tạo</h2>
-      <p>Đầu vào là sơ đồ ở bước 2 và nhật ký ở bước 4. Tám bước trả lời: mô hình có chạy đúng không, hồ sơ chờ ở đâu, vì sao trễ hạn, sửa gì thì nhanh hơn thật.</p></div>
+      <p>Đầu vào là sơ đồ ở bước 2, thời gian chuẩn ở bước 3 và nhật ký ở bước 5. Tám bước trả lời: mô hình có chạy đúng không, hồ sơ chờ ở đâu, vì sao trễ hạn, sửa gì thì nhanh hơn thật.</p></div>
 
     <section class="card" id="p2-run">
       <div class="params live-only">
         <label>Hồ sơ mỗi kịch bản<input type="number" id="p2-ncases" value="200" min="20" max="1000"></label>
         <label>Số lần lặp khi so sánh AS-IS / TO-BE<input type="number" id="p2-nrep" value="10" min="2" max="30"></label>
         <label>Thời hạn xử lý (phút)<input type="number" id="p2-sla" placeholder="tự động" min="1"></label>
+        <label>Hồ sơ đến cách nhau trung bình (phút)<input type="number" id="p2-gap" value="40" min="1"></label>
+        <label>Kịch bản quá tải: cách nhau (phút)<input type="number" id="p2-gap3" value="25" min="1"></label>
       </div>
       <div class="row">
         <button class="primary" id="run-p2" type="button" disabled>Chạy Phần 2</button>
@@ -614,7 +624,7 @@ function rename(n, g) {
 /* ============================================================
    Trạng thái và điều phối Phần 1
    ============================================================ */
-const state = { sims: {}, sampleKey: null, ownLogs: [] };
+const state = { sims: {}, sampleKey: null, ownLogs: [], params: null };
 const EXAMPLES = {
   "quy-trinh-nghi-phep": { label: "Nghỉ phép", text: "Nhân viên gửi đơn nghỉ phép. Quản lý xem xét đơn. Nếu quản lý đồng ý, nhân sự ghi nhận nghỉ phép và nhân viên nhận thông báo đã duyệt. Nếu từ chối, quản lý ghi lý do từ chối và nhân viên nhận thông báo từ chối." },
   "quy-trinh-dat-hang": { label: "Đơn hàng", text: "Khách đặt hàng trên website. Hệ thống kiểm tra tồn kho. Nếu còn hàng, kho soạn hàng và kế toán xuất hóa đơn song song, sau đó giao cho khách. Nếu hết hàng, hệ thống báo hết hàng cho khách." },
@@ -623,15 +633,15 @@ const EXAMPLES = {
 const norm = s => s.replace(/\s+/g, " ").trim().toLowerCase();
 
 function setModel(m, msg, sampleKey = null) {
-  view.m = m; view.sel = null; state.sampleKey = sampleKey; state.fileStem = null;
+  view.m = m; view.sel = null; state.sampleKey = sampleKey; state.fileStem = null; state.params = null;
   $("#dsl").value = toDsl(m);
-  ["#fit", "#dl-bpmn", "#redraw", "#sim-ok", "#sim-bad"].forEach(s => $(s).disabled = false);
-  draw(); showLint(); resetSims(); refreshP2();
+  ["#fit", "#dl-bpmn", "#redraw", "#sim-ok", "#sim-bad", "#tp-reset"].forEach(s => $(s).disabled = false);
+  draw(); showLint(); syncParams(); resetSims(); refreshP2();
   if (msg) $("#draw-status").textContent = msg;
 }
 function onModelChange(msg) {
-  $("#dsl").value = toDsl(view.m); state.sampleKey = null; draw(); showLint();
-  if (Object.keys(state.sims).length) { resetSims(); msg = (msg ? msg + " " : "") + "Sơ đồ đã đổi: chạy lại bước 3."; }
+  $("#dsl").value = toDsl(view.m); state.sampleKey = null; draw(); showLint(); syncParams();
+  if (Object.keys(state.sims).length) { resetSims(); msg = (msg ? msg + " " : "") + "Sơ đồ đã đổi: chạy lại bước 4."; }
   refreshP2();
   if (msg) $("#draw-status").textContent = msg;
 }
@@ -702,7 +712,71 @@ function fromDsl(text) {
 }
 
 /* ============================================================
-   Bước 3: mô phỏng như text2BPMN (chỉ thời gian làm việc, chưa có hàng đợi)
+   Bước 3: thời gian chuẩn và giả định — mọi con số mô phỏng dùng đều nằm ở đây, kèm nguồn
+   ============================================================ */
+const SOURCES = ["Giả định", "Đo thực tế", "Văn bản quy định", "Phần mềm một cửa"];
+function defaultParams(m) {
+  const tasks = {}, lanes = {};
+  Object.values(m.nodes).filter(n => TASK_TYPES.includes(n.type)).forEach(n => tasks[n.name] = tasks[n.name] || { min: MINUTES[n.type] || 20, src: "Giả định", type: n.type, lane: n.lane });
+  m.lanes.filter(l => Object.values(m.nodes).some(n => n.lane === l.name && TASK_TYPES.includes(n.type) && !SYSTEM_TYPES.includes(n.type))).forEach(l => lanes[l.name] = 1);
+  return { tasks, lanes, scen: { viec_suon_se: { p: 90, r: 5 }, nhieu_truc_trac: { p: 30, r: 33 } } };
+}
+function syncParams() {
+  const d = defaultParams(view.m), old = state.params;
+  if (old) {
+    Object.keys(d.tasks).forEach(k => { if (old.tasks[k]) { d.tasks[k].min = old.tasks[k].min; d.tasks[k].src = old.tasks[k].src; } });
+    Object.keys(d.lanes).forEach(k => { if (old.lanes[k] != null) d.lanes[k] = old.lanes[k]; });
+    d.scen = old.scen;
+  }
+  state.params = d; renderParams();
+}
+const paramsKey = p => JSON.stringify([Object.entries(p.tasks).map(([k, v]) => [k, +v.min]), p.lanes, p.scen]);
+const isDefaultParams = () => paramsKey(state.params) === paramsKey(defaultParams(view.m));
+function paramSummary() {
+  const t = Object.values(state.params.tasks), assumed = t.filter(x => x.src === "Giả định").length;
+  return { assumed, total: t.length };
+}
+function onParamChange() {
+  if (Object.keys(state.sims).length) { resetSims(); $("#sim-note").textContent = "Thời gian hoặc giả định đã đổi: chạy lại bước 4."; }
+  const s = paramSummary(), chip = $("#tp-chip");
+  if (chip) { chip.className = "chip" + (s.assumed ? "" : " ok"); chip.textContent = s.assumed ? `${s.assumed}/${s.total} bước còn dùng thời gian giả định` : "Mọi bước đã có nguồn số liệu"; }
+  refreshP2();
+}
+function numInput(val, min, max, on, label) {
+  const i = el("input", { type: "number", min, max, step: "any", "aria-label": label }); i.value = val;
+  i.addEventListener("input", () => { const v = parseFloat(i.value); if (!isNaN(v) && v >= min && v <= max) { on(v); onParamChange(); } });
+  return i;
+}
+function renderParams() {
+  const box = $("#tp-body"), P = state.params;
+  if (!P) { box.replaceChildren(el("p", { class: "waiting", text: "Cần sơ đồ ở bước 2." })); return; }
+  const TYPE = { task: "Việc chung", userTask: "Việc của người", manualTask: "Việc thủ công", serviceTask: "Việc của hệ thống", scriptTask: "Việc của hệ thống", sendTask: "Gửi", receiveTask: "Nhận", businessRuleTask: "Việc của hệ thống" };
+  const taskRows = Object.entries(P.tasks).map(([name, t]) => {
+    const sel = el("select", { "aria-label": `Nguồn số liệu của ${name}` }, SOURCES.map(x => el("option", { value: x, text: x })));
+    sel.value = t.src; sel.addEventListener("change", () => { t.src = sel.value; onParamChange(); });
+    return el("tr", {}, el("td", { text: name }), el("td", { text: t.lane }), el("td", { text: TYPE[t.type] || t.type }),
+      el("td", {}, numInput(t.min, 0.1, 100000, v => t.min = v, `Phút trung bình của ${name}`)), el("td", {}, sel));
+  });
+  const scenRows = [["viec_suon_se", "Việc suôn sẻ"], ["nhieu_truc_trac", "Nhiều trục trặc"]].map(([k, lb]) => el("tr", {}, el("td", { text: lb }),
+    el("td", {}, numInput(P.scen[k].p, 0, 100, v => P.scen[k].p = v, `${lb}: % đi nhánh thuận`)),
+    el("td", {}, numInput(P.scen[k].r, 0, 90, v => P.scen[k].r = v, `${lb}: % làm lại`))));
+  const laneRows = Object.entries(P.lanes).map(([ln, n]) => el("tr", {}, el("td", { text: ln }), el("td", {}, numInput(n, 1, 50, v => P.lanes[ln] = Math.round(v), `Số người làn ${ln}`))));
+  const tbl = (head, rows) => el("div", { class: "tbl" }, el("table", {}, el("thead", {}, el("tr", {}, head.map(h => el("th", { text: h })))), el("tbody", {}, rows)));
+  box.replaceChildren(
+    el("div", { class: "row" }, el("span", { class: "chip", id: "tp-chip" })),
+    el("h3", { text: "Thời gian mỗi bước" }),
+    tbl(["Bước", "Làn", "Loại", "Phút trung bình", "Nguồn"], taskRows),
+    el("p", { class: "small muted", text: "Giả định mặc định theo loại việc: việc của người 30 phút, việc chung 20 phút, việc của hệ thống 5 phút. Mỗi lần làm dao động ngẫu nhiên quanh số trung bình (phân phối log-normal, khoảng ±40%) để các hồ sơ không giống hệt nhau." }),
+    el("h3", { text: "Hai kịch bản" }),
+    tbl(["Kịch bản", "% hồ sơ đi nhánh thuận", "% khả năng làm lại mỗi bước"], scenRows),
+    el("p", { class: "small muted", text: "Nhánh thuận nhận theo nhãn nhánh có chữ “có”, “đạt”, “đồng ý”, “duyệt”, “trúng”. Các tỷ lệ này là giả định về tình huống, không phải số đo." }),
+    el("h3", { text: "Số người mỗi làn (Phần 2 dùng để tính hàng đợi)" }),
+    tbl(["Làn", "Số người"], laneRows));
+  onParamChange();
+}
+
+/* ============================================================
+   Bước 4: mô phỏng như text2BPMN (chỉ thời gian làm việc, chưa có hàng đợi)
    Tham số trùng với kịch bản S1, S2 của Phần 2 để hai phần đối chiếu được.
    ============================================================ */
 const SCEN = {
@@ -714,7 +788,7 @@ const T0 = Date.UTC(2026, 2, 2, 8, 0, 0);
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const lognorm = (r, mean) => { const z = Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r()); return Math.exp(Math.log(mean) - 0.08 + 0.4 * z); };
 function simulate(m, key, n) {
-  const sc = SCEN[key], out = {}, inn = {}, rows = [], cases = [];
+  const P = state.params, sc = { ...SCEN[key], p_positive: P.scen[key].p / 100, p_rework: P.scen[key].r / 100 }, out = {}, inn = {}, rows = [], cases = [];
   Object.keys(m.nodes).forEach(i => { out[i] = []; inn[i] = []; });
   m.flows.forEach(f => { out[f.src]?.push(f); inn[f.tgt]?.push(f); });
   const starts = Object.values(m.nodes).filter(x => x.type === "startEvent");
@@ -730,7 +804,8 @@ function simulate(m, key, n) {
         let reps = 1; while (r() < sc.p_rework && reps < 4) reps++;
         rework += reps - 1;
         for (let k = 0; k < reps; k++) {
-          const d = lognorm(r, MINUTES[node.type] || 20) * 60000;
+          const mean = P.tasks[node.name] ? +P.tasks[node.name].min : (MINUTES[node.type] || 20);
+          const d = mean > 0 ? lognorm(r, mean) * 60000 : 0;
           rows.push([cid, node.name, tOut, tOut + d, SYSTEM_TYPES.includes(node.type) ? "Hệ thống" : node.lane, node.lane]);
           work += d; tOut += d;
         }
@@ -787,7 +862,8 @@ function renderSims() {
     const st = simStats(s);
     box.append(el("div", { class: "sim" },
       el("h3", { text: `${s.label} · ${s.cases.length} hồ sơ` }),
-      el("div", {}, el("div", { class: "small muted", text: "Một hồ sơ xong trong (thời gian làm việc)" }), el("div", { class: "big", text: `${nf.format(st.work)} phút` })),
+      el("div", {}, el("div", { class: "small muted", text: "Một hồ sơ xong trong (thời gian làm việc, tính từ thời gian chuẩn ở bước 3)" }), el("div", { class: "big", text: `${nf.format(st.work)} phút` })),
+      (() => { const ps = paramSummary(); return el("span", { class: "chip" + (ps.assumed ? "" : " ok"), text: ps.assumed ? `${ps.assumed}/${ps.total} bước dùng thời gian giả định` : "Thời gian có nguồn số liệu" }); })(),
       el("div", { class: "bars" }, st.share.map(([k, v]) => el("div", { class: "bar" }, el("div", { class: "t" }, el("i", { style: `width:${Math.max(2, v * 100)}%` }), el("span", { text: k })), el("span", { class: "v", text: pct(v) })))),
       el("dl", { class: "kv" },
         el("dt", { text: "Tốn thời gian nhất" }), el("dd", { text: `${st.share[0]?.[0] ?? "–"} (${st.share[0] ? pct(st.share[0][1]) : "–"})` }),
@@ -817,7 +893,7 @@ function toXes(s) {
 function renderLogPreview() {
   const box = $("#log-preview"), sims = Object.values(state.sims);
   $("#dl-csv").disabled = $("#dl-zip").disabled = !sims.length;
-  if (!sims.length) { box.replaceChildren(el("p", { class: "waiting", text: "Chạy ít nhất một kịch bản ở bước 3 để có nhật ký." })); return; }
+  if (!sims.length) { box.replaceChildren(el("p", { class: "waiting", text: "Chạy ít nhất một kịch bản ở bước 4 để có nhật ký." })); return; }
   const s = sims[0];
   box.replaceChildren(
     el("p", { class: "small", text: sims.map(x => `${x.key}.csv: ${x.rows.length} dòng, ${x.cases.length} hồ sơ`).join(" · ") }),
@@ -858,7 +934,7 @@ const bpmnName = () => (state.sampleKey || state.fileStem || slug(view.m.name)) 
    ============================================================ */
 const STEPS = [
   ["Kiểm tra BPMN", "Mô hình có chạy đúng không, hay vẽ được nhưng sai hành vi?", "Chuyển BPMN sang mạng Petri, kiểm tra soundness (Woflan) và dò 5 mẫu lỗi hay gặp."],
-  ["Nhật ký", "Nhật ký của Phần 1 có dùng được không, và cần bổ sung gì?", "Đối chiếu nhật ký Phần 1, rồi mô phỏng 4 kịch bản có hồ sơ đến theo thời gian và số người mỗi làn."],
+  ["Nhật ký", "Nhật ký của Phần 1 có dùng được không, và cần bổ sung gì?", "Kiểm tra nhất quán với nhật ký Phần 1, rồi mô phỏng 4 kịch bản có hồ sơ đến theo thời gian và số người mỗi làn."],
   ["Thống kê", "Hồ sơ mất bao lâu, bao nhiêu là chờ, bao nhiêu hồ sơ trễ hạn?", "Thời gian làm việc, thời gian lưu trú, tỷ lệ trễ hạn và biến thể theo kịch bản."],
   ["Khám phá", "Chỉ nhìn nhật ký, quy trình thực tế trông ra sao?", "DFG; Alpha, Heuristics, Inductive Miner; chấm fitness, precision, generalization, simplicity."],
   ["Tuân thủ", "Vận hành lệch khỏi BPMN ở đâu, mức nào?", "Alignment với BPMN; đếm bước bị bỏ, bước làm thừa; kiểm tra luật nghiệp vụ."],
@@ -944,7 +1020,7 @@ async function runP2() {
   p2 = { steps: [], img: () => "", files: null, error: false }; $("#p2-downloads").replaceChildren(); renderP2(null);
   if (mode === "live") return runLive();
   const off = $("#p2-offline");
-  const hit = !state.ownLogs.length && DEMO && DEMO.processes.find(p => SAMPLES[p.key] && signature(parseBpmn(SAMPLES[p.key])) === signature(view.m));
+  const hit = !state.ownLogs.length && isDefaultParams() && DEMO && DEMO.processes.find(p => SAMPLES[p.key] && signature(parseBpmn(SAMPLES[p.key])) === signature(view.m));
   if (hit) {
     const steps = JSON.parse(JSON.stringify(hit.steps));
     const s2 = steps.find(s => s.n === 2), s3 = steps.find(s => s.n === 3);
@@ -952,15 +1028,16 @@ async function runP2() {
     p2 = { steps, img: f => hit.images[f] || "", files: null, error: false };
     renderP2(null);
     $("#p2-status").className = "status ok";
-    $("#p2-status").textContent = `Kết quả chạy sẵn bằng Python cho ${hit.bpmn} (200 hồ sơ mỗi kịch bản, 10 lần lặp).`;
+    $("#p2-status").textContent = `Kết quả chạy sẵn bằng Python cho ${hit.bpmn}: 200 hồ sơ mỗi kịch bản, 10 lần lặp, giả định mặc định ở bước 3, hồ sơ đến cách nhau 40 phút (quá tải 25 phút).`;
     return;
   }
   off.hidden = false;
   off.replaceChildren(
-    el("p", { text: "Phần 2 chạy bằng Python (pm4py). Trang này đang mở không kèm máy chủ Python, nên chỉ có kết quả chạy sẵn cho ba sơ đồ ví dụ khi chưa sửa." }),
+    el("p", { text: "Phần 2 chạy bằng Python (pm4py). Trang này đang mở không kèm máy chủ Python, nên chỉ có kết quả chạy sẵn cho ba sơ đồ ví dụ, khi chưa sửa sơ đồ và còn dùng giả định mặc định ở bước 3." }),
     el("p", { text: "Để chạy trên sơ đồ của bạn: mở notebook của repo trên Colab và chạy ô “Giao diện web”. Trang mở ra giống trang này nhưng có Python đi kèm, nên Phần 2 chạy được với mọi sơ đồ. Trên máy cá nhân: python -m text2bpmn_mining.web." }));
   $("#p2-status").textContent = "";
 }
+const CALIB_NOTE = "Nhật ký Phần 1 chỉ có thời gian làm việc, chưa có hàng đợi. Phần 2 mô phỏng lại trên cùng BPMN và cùng thời gian chuẩn ở bước 3, thêm hồ sơ đến theo thời gian và số người mỗi làn. Bảng đối chiếu dưới đây là kiểm tra nhất quán giữa hai bộ mô phỏng (chênh lệch chỉ do ngẫu nhiên), không phải kiểm chứng với thực tế.";
 /* Bản trình diễn: tính bảng đối chiếu Phần 1 ↔ Phần 2 ngay trong trang (máy chủ Python tính đúng bảng này ở Bước 2). */
 function addCalibration(s2, s3) {
   const kpi = s3.tables.find(t => /KPI/.test(t.title)), share = s3.tables.find(t => /Tỷ trọng/.test(t.title));
@@ -978,7 +1055,7 @@ function addCalibration(s2, s3) {
   });
   s2.facts[0].value = "bộ mô phỏng của Phần 2 (đã đối chiếu với nhật ký Phần 1)";
   s2.notes.unshift(...rowsW.map(r => `${r[0]} ↔ ${r[1]}: làm việc ${nf.format(r[3])} phút (Phần 1) và ${r[4] != null ? nf.format(r[4]) : "–"} phút (Phần 2), lệch ${r[5] != null ? (r[5] >= 0 ? "+" : "") + pct(r[5]) : "–"}.`));
-  s2.notes.unshift("Nhật ký Phần 1 chỉ có thời gian làm việc, chưa có hàng đợi, nên dùng để đối chiếu; Phần 2 mô phỏng lại 4 kịch bản trên cùng BPMN, thêm hồ sơ đến theo thời gian và số người mỗi làn.");
+  s2.notes.unshift(CALIB_NOTE);
   s2.tables.unshift({ title: "Đối chiếu tỷ trọng thời gian từng bước", columns: cols, rows: Object.entries(shareRows).map(([a, v]) => [a, ...cols.slice(1).map(c => v[c] ?? 0)]) });
   s2.tables.unshift({ title: "Đối chiếu thời gian làm việc mỗi hồ sơ với Phần 1", columns: ["log_text2bpmn", "kich_ban_phan2", "ho_so_text2bpmn", "lam_viec_text2bpmn", "lam_viec_phan2", "chenh_lech"], rows: rowsW });
 }
@@ -987,6 +1064,10 @@ async function runLive() {
   fd.append("bpmn", new Blob([xml], { type: "application/xml" }), bpmnName());
   if (state.ownLogs.length) { state.ownLogs.forEach(f => fd.append("logs", f, f.name)); fd.append("logs_as", "log"); }
   else { Object.values(state.sims).forEach(s => fd.append("logs", new Blob([toCsv(s)], { type: "text/csv" }), `${s.key}.csv`)); fd.append("logs_as", "doi_chieu"); }
+  const P = state.params;
+  fd.append("params", JSON.stringify({ task_minutes: Object.fromEntries(Object.entries(P.tasks).map(([k, t]) => [k, +t.min])), capacity: P.lanes,
+    S1: { p_positive: P.scen.viec_suon_se.p / 100, p_rework: P.scen.viec_suon_se.r / 100 }, S2: { p_positive: P.scen.nhieu_truc_trac.p / 100, p_rework: P.scen.nhieu_truc_trac.r / 100 },
+    gap: +$("#p2-gap").value || 40, gap_overload: +$("#p2-gap3").value || 25 }));
   fd.append("n_cases", $("#p2-ncases").value); fd.append("n_rep", $("#p2-nrep").value); fd.append("sla", $("#p2-sla").value);
   const st = $("#p2-status"); st.className = "status"; st.textContent = "Đang gửi…"; $("#run-p2").disabled = true;
   let res; try { res = await fetch("api/run", { method: "POST", body: fd }); } catch { return failP2("Không kết nối được máy chủ Python. Kiểm tra ô chạy giao diện web còn chạy."); }
@@ -1027,11 +1108,14 @@ function init() {
   $("#sim-bad").addEventListener("click", () => runSim("nhieu_truc_trac"));
   $("#dl-csv").addEventListener("click", () => Object.values(state.sims).forEach(s => saveFile(`${s.key}.csv`, toCsv(s), "text/csv")));
   $("#dl-zip").addEventListener("click", () => {
-    const files = [{ name: bpmnName(), data: toXml(view.m) }];
+    const P = state.params, files = [{ name: bpmnName(), data: toXml(view.m) },
+      { name: "thoi_gian_chuan.csv", data: ["buoc,lan,loai,phut_trung_binh,nguon", ...Object.entries(P.tasks).map(([k, t]) => [k, t.lane, t.type, t.min, t.src].map(v => csvCell(String(v))).join(","))].join("\n") + "\n" },
+      { name: "gia_dinh_kich_ban.csv", data: "kich_ban,pct_nhanh_thuan,pct_lam_lai\n" + Object.entries(P.scen).map(([k, v]) => `${k},${v.p},${v.r}`).join("\n") + "\nlan,so_nguoi\n" + Object.entries(P.lanes).map(([k, v]) => `${csvCell(k)},${v}`).join("\n") + "\n" }];
     Object.values(state.sims).forEach(s => files.push({ name: `${s.key}.csv`, data: toCsv(s) }, { name: `${s.key}.xes`, data: toXes(s) }));
     saveFile(`${slug(view.m.name)}_bpmn_va_nhat_ky.zip`, zip(files));
   });
   $("#run-p2").addEventListener("click", runP2);
+  $("#tp-reset").addEventListener("click", () => { state.params = null; syncParams(); });
   $("#open-bpmn").addEventListener("change", async e => {
     const f = e.target.files[0]; if (!f) return;
     try { const xml = await f.text(); const key = Object.keys(SAMPLES).find(k => SAMPLES[k].trim() === xml.trim()) || null;

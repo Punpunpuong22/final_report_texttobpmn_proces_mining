@@ -78,7 +78,10 @@ def simulate(M: dict, sc: dict, cfg: Config, seed: int | None = None, n_cases: i
             c["n_lam_lai"] += reps - 1
             ready = t
             for _ in range(reps):
-                mean = cfg.task_minutes.get(n["name"], cfg.default_minutes.get(n["type"], 20))
+                if n["type"] in SYSTEM_TYPES and n["name"] == cfg.automate:   # bước đã tự động hoá ở TO-BE (C3)
+                    mean = cfg.default_minutes.get(n["type"], 5)
+                else:
+                    mean = cfg.task_minutes.get(n["name"], cfg.default_minutes.get(n["type"], 20))
                 d = crng.lognormvariate(math.log(mean) - 0.08, 0.4)
                 if n["type"] in SYSTEM_TYPES:
                     st, res = ready, "Hệ thống"
