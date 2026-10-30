@@ -46,6 +46,26 @@ PYTHONPATH=src python -m text2bpmn_mining data/bpmn/*.bpmn --n-rep 10
 ```
 Kiểm tra nhanh mã nguồn: `python tests/test_pipeline.py` (hoặc `pytest -q`).
 
+## Giao diện web
+
+Chạy cả tám bước từ trình duyệt: chọn tệp BPMN mẫu hoặc tải lên tệp `.bpmn` của bạn, thêm các tệp log CSV/XES
+do text2BPMN xuất (nếu có; mỗi tệp là một kịch bản), chỉnh số hồ sơ, số lần lặp, thời hạn rồi bấm **Chạy 8 bước**.
+Thanh luồng vẽ theo kiểu BPMN đổi màu khi từng bước chạy xong; mỗi bước hiện câu hỏi, chỉ số chính, nhận xét tự động,
+hình (BPMN, DFG, mô hình khám phá, heatmap, BPMN TO-BE) và bảng; cuối cùng tải toàn bộ kết quả dạng `.zip`.
+
+| Nơi chạy | Cách mở |
+|---|---|
+| Colab | Chạy ô **Giao diện web** ở cuối notebook, bấm đường dẫn hiện ra |
+| Máy cá nhân | `PYTHONPATH=src python -m text2bpmn_mining.web` rồi mở http://127.0.0.1:8050 |
+| Kaggle | Không hỗ trợ mở cổng web; dùng các ô của notebook |
+
+Bản trình diễn tĩnh `docs/demo.html` chứa kết quả đã chạy sẵn trên ba tệp mẫu (mở trực tiếp bằng trình duyệt, không cần
+máy chủ, không tải tệp riêng lên được). Tạo lại bằng `PYTHONHASHSEED=2 PYTHONPATH=src python scripts/build_demo.py`.
+
+Mã: `src/text2bpmn_mining/web/server.py` (Flask: `/api/run` nhận tệp và chạy pipeline trong luồng nền,
+`/api/job/<id>` trả kết quả từng bước), `web/static/index.html` (giao diện, dùng chung cho bản trình diễn),
+`report.py` (chuyển kết quả mỗi bước thành JSON).
+
 ## Cấu trúc kho
 
 ```
@@ -57,6 +77,8 @@ text2bpmn-process-mining/
 │   ├── simulation.py   # mô phỏng sự kiện rời rạc dựa trên token, cài sai lệch
 │   ├── eventlog.py     # đọc log text2BPMN (CSV/XES), chuẩn hoá cột, kiểm tra chất lượng
 │   ├── analysis.py     # khám phá (Alpha, Heuristics, Inductive), alignment, luật, điểm nghẽn, cây quyết định
+│   ├── report.py       # chuyển kết quả từng bước thành JSON cho giao diện web
+│   ├── web/            # giao diện web: server.py (Flask) + static/index.html
 │   ├── whatif.py       # so sánh AS-IS / từng thay đổi / TO-BE, Wilcoxon
 │   ├── plots.py        # biểu đồ
 │   ├── pipeline.py     # lớp Pipeline: step1 … step8, run()

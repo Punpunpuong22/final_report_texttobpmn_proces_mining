@@ -1,0 +1,319 @@
+<!-- Một trang dùng cho hai chế độ:
+     - Chạy thật: máy chủ Flask (python -m text2bpmn_mining.web) trả kết quả qua /api.
+     - Trình diễn: window.DEMO chứa sẵn kết quả đã chạy (tạo bằng scripts/build_demo.py). -->
+<title>Khai phá quy trình text2BPMN</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lora:wght@500;600&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Bố cục: một cột làm việc; thanh luồng 8 bước vẽ như sơ đồ BPMN (sự kiện bắt đầu → 8 công việc → sự kiện kết thúc). */
+:root {
+  --paper: #F2F4F7; --surface: #FFFFFF; --ink: #14243A; --muted: #556275; --rule: #D5DBE3;
+  --accent: #B4491C; --accent-tint: #FBEDE4; --blue: #2E5E8C; --blue-tint: #E6EEF6;
+  --good: #2C7A55; --good-tint: #E3F2EA; --bad: #B3261E; --bad-tint: #FBE7E5; --warn: #9A6A00;
+  --font-display: "Lora", Georgia, serif;
+  --font-body: "Be Vietnam Pro", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-data: "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0E1622; --surface: #162131; --ink: #E5EBF2; --muted: #9AA8B9; --rule: #2A394D;
+  --accent: #E58A5D; --accent-tint: #3A2419; --blue: #86ADD6; --blue-tint: #1B2C42;
+  --good: #6CC59A; --good-tint: #163327; --bad: #F08A80; --bad-tint: #3B1C1A; --warn: #E2B44D; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #0E1622; --surface: #162131; --ink: #E5EBF2; --muted: #9AA8B9; --rule: #2A394D;
+  --accent: #E58A5D; --accent-tint: #3A2419; --blue: #86ADD6; --blue-tint: #1B2C42;
+  --good: #6CC59A; --good-tint: #163327; --bad: #F08A80; --bad-tint: #3B1C1A; --warn: #E2B44D; color-scheme: dark }
+* { box-sizing: border-box }
+img { max-width: 100% } [hidden] { display: none !important }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px }
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px }
+h1, h2 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0 }
+h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15 }
+h2 { font-size: 22px; line-height: 1.25 }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent) }
+.lead { color: var(--muted); max-width: 70ch; margin: 6px 0 0 }
+header.top { display: flex; flex-direction: column; gap: 6px }
+
+/* Bảng điều khiển */
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0 }
+.field > label, .field > .lbl { font-weight: 600; font-size: 13px }
+.hint { font-size: 12.5px; color: var(--muted) }
+select, input[type=number], input[type=file] { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; min-width: 0; width: 100% }
+input[type=file] { padding: 6px }
+.seg { display: flex; flex-wrap: wrap; gap: 6px }
+.seg button { font: inherit; font-size: 13.5px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+.params { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px }
+.params .field label { font-weight: 500; font-size: 12.5px; color: var(--muted) }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; grid-column: 1 / -1; border-top: 1px solid var(--rule); padding-top: 16px }
+button.primary { font: inherit; font-weight: 600; background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer }
+button.primary:disabled { opacity: .55; cursor: progress }
+a.btn { font-weight: 600; font-size: 13.5px; color: var(--blue); text-decoration: none; border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; background: var(--surface) }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px }
+#status { font-size: 13.5px; color: var(--muted) }
+#status.err { color: var(--bad) }
+.demo-note { grid-column: 1 / -1; font-size: 13.5px; color: var(--muted); background: var(--blue-tint); border-radius: 8px; padding: 10px 12px }
+
+/* Thanh luồng kiểu BPMN */
+.flow-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius) }
+.flow { display: flex; align-items: center; gap: 0; padding: 18px 16px; min-width: max-content }
+.ev { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--muted); flex: none }
+.ev.end { border-width: 4px; border-color: var(--ink) }
+.arrow { width: 22px; height: 2px; background: var(--muted); position: relative; flex: none }
+.arrow::after { content: ""; position: absolute; right: -1px; top: -4px; border-left: 7px solid var(--muted); border-top: 5px solid transparent; border-bottom: 5px solid transparent }
+.task { font: inherit; text-align: left; width: 118px; min-height: 64px; border: 1.5px solid var(--rule); border-radius: 9px; background: var(--paper); color: var(--ink);
+  padding: 8px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; flex: none }
+.task .k { font: 500 11px var(--font-data); color: var(--muted) }
+.task .t { font-size: 12.5px; font-weight: 600; line-height: 1.25 }
+.task[data-state="running"] { border-color: var(--accent); background: var(--accent-tint); animation: pulse 1.2s ease-in-out infinite }
+.task[data-state="done"] { border-color: var(--good); background: var(--good-tint) }
+.task[data-state="error"] { border-color: var(--bad); background: var(--bad-tint) }
+@keyframes pulse { 50% { box-shadow: 0 0 0 4px var(--accent-tint) } }
+@media (prefers-reduced-motion: reduce) { .task[data-state="running"] { animation: none } }
+
+/* Kết quả từng bước */
+.step { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; scroll-margin-top: 16px }
+.step-head { display: flex; flex-direction: column; gap: 4px }
+.step-head .num { font: 500 12px var(--font-data); color: var(--accent) }
+.q { color: var(--muted); margin: 0 }
+.waiting { color: var(--muted); font-size: 13.5px; border: 1px dashed var(--rule); border-radius: 8px; padding: 12px }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 0 }
+.fact { background: var(--paper); border-radius: 8px; padding: 10px 12px; min-width: 0 }
+.fact dt { font-size: 12px; color: var(--muted) }
+.fact dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums }
+.notes { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px }
+.notes li { border-left: 3px solid var(--accent); padding: 2px 0 2px 10px; max-width: 90ch }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px }
+.legend span { background: var(--blue-tint); border-radius: 6px; padding: 4px 8px }
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0 }
+figure .im { background: #FFFFFF; border: 1px solid var(--rule); border-radius: 8px; padding: 8px; display: flex; justify-content: center }
+figure img { max-height: 420px; max-width: 100%; height: auto; object-fit: contain }
+figcaption { font-size: 12.5px; color: var(--muted) }
+details { border: 1px solid var(--rule); border-radius: 8px; min-width: 0 }
+summary { cursor: pointer; padding: 10px 12px; font-weight: 600; font-size: 14px }
+.tbl { overflow-x: auto; padding: 0 12px 12px }
+table { border-collapse: collapse; font-size: 13px; width: 100% }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top }
+th { font-weight: 600; color: var(--muted); font-size: 12px; white-space: nowrap }
+td.n { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap }
+pre { font: 12px/1.45 var(--font-data); overflow-x: auto; margin: 0; padding: 0 12px 12px }
+.dl { display: flex; flex-wrap: wrap; gap: 8px }
+footer { font-size: 12.5px; color: var(--muted) }
+footer a { color: var(--blue); overflow-wrap: anywhere }
+@media (max-width: 640px) { .params { grid-template-columns: 1fr } .step, .panel { padding: 14px } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Phần 2 · Khai phá quy trình</span>
+    <h1>Từ một tệp BPMN đến BPMN cải tiến</h1>
+    <p class="lead">Tải lên mô hình BPMN do text2BPMN xuất (và nhật ký sự kiện nếu có). Trang chạy tám bước: kiểm tra mô hình, lấy log, thống kê, khám phá, tuân thủ, điểm nghẽn, nguyên nhân trễ hạn và đánh giá BPMN TO-BE.</p>
+  </header>
+
+  <form class="panel" id="form" autocomplete="off">
+    <div class="field" id="f-model">
+      <span class="lbl">Mô hình BPMN</span>
+      <div class="seg" id="samples" role="group" aria-label="Chọn quy trình mẫu"></div>
+      <div class="live-only field">
+        <label for="bpmn">Hoặc tải tệp của bạn (.bpmn)</label>
+        <input type="file" id="bpmn" name="bpmn" accept=".bpmn,.xml">
+      </div>
+    </div>
+    <div class="field live-only">
+      <label for="logs">Event log của text2BPMN (tuỳ chọn)</label>
+      <input type="file" id="logs" name="logs" accept=".csv,.xes" multiple>
+      <span class="hint">Mỗi tệp CSV/XES là một kịch bản. Để trống thì trang mô phỏng 4 kịch bản trên chính BPMN.</span>
+    </div>
+    <div class="field live-only">
+      <span class="lbl">Tham số</span>
+      <div class="params">
+        <div class="field"><label for="n_cases">Hồ sơ mỗi kịch bản</label><input type="number" id="n_cases" name="n_cases" value="200" min="20" max="1000"></div>
+        <div class="field"><label for="n_rep">Lần lặp what-if</label><input type="number" id="n_rep" name="n_rep" value="10" min="2" max="30"></div>
+        <div class="field"><label for="sla">Thời hạn (phút)</label><input type="number" id="sla" name="sla" placeholder="tự động" min="1"></div>
+      </div>
+      <span class="hint">Thời hạn để trống = 1,5 × P90 thời gian lưu trú của kịch bản thuận lợi.</span>
+    </div>
+    <div class="actions">
+      <button class="primary live-only" id="run" type="submit">Chạy 8 bước</button>
+      <span id="status" role="status" aria-live="polite"></span>
+      <span class="dl" id="downloads"></span>
+    </div>
+    <p class="demo-note demo-only" hidden>Bản trình diễn: kết quả đã chạy sẵn trên ba tệp BPMN mẫu bằng đúng mã nguồn của nhóm (200 hồ sơ mỗi kịch bản, 10 lần lặp). Muốn chạy tệp BPMN hoặc log của bạn, mở giao diện web từ notebook trên Colab hoặc chạy <code>python -m text2bpmn_mining.web</code>.</p>
+  </form>
+
+  <div class="flow-wrap"><nav class="flow" id="flow" aria-label="Tám bước của pipeline"></nav></div>
+  <main id="steps" style="display:flex;flex-direction:column;gap:16px"></main>
+  <footer>Dữ liệu mặc định là mô phỏng với tham số giả định; kết quả minh hoạ phương pháp. Mã nguồn: <a href="https://github.com/Punpunpuong22/final_report_texttobpmn_proces_mining" target="_blank" rel="noopener">github.com/Punpunpuong22/final_report_texttobpmn_proces_mining</a></footer>
+</div>
+
+<script>
+const STEPS = [
+  ["Kiểm tra BPMN", "BPMN có hợp lệ về hành vi (sound) không?", "Đọc XML, chuyển sang mạng Petri, chạy Woflan và dò 5 mẫu lỗi hay gặp."],
+  ["Event log", "Lấy nhật ký ở đâu và nhật ký có sạch không?", "Đọc log text2BPMN nếu có; nếu không, mô phỏng token trên BPMN với hồ sơ đến theo thời gian và 1 người mỗi làn."],
+  ["Thống kê mô tả", "Quy trình chạy nhanh hay chậm, thời gian chờ chiếm bao nhiêu?", "Tính thời gian làm việc, thời gian lưu trú, tỷ lệ trễ hạn và biến thể theo kịch bản."],
+  ["Khám phá", "Chỉ nhìn log, quy trình thực tế trông ra sao?", "Vẽ DFG; chạy Alpha, Heuristics và Inductive Miner; chấm fitness, precision, generalization, simplicity."],
+  ["Tuân thủ", "Vận hành lệch khỏi BPMN ở đâu, mức nào?", "Alignment với BPMN AS-IS theo biến thể; đếm log move, model move; kiểm tra luật nghiệp vụ."],
+  ["Điểm nghẽn", "Hồ sơ bị giữ lại ở đâu?", "Tách thời gian chờ và xử lý; xếp hạng theo tổng phút chờ; tính mức tải từng làn."],
+  ["Nguyên nhân", "Đặc điểm nào gắn với việc trễ hạn?", "Cây quyết định sâu 3 trên số hồ sơ tồn lúc nộp, số lần làm lại và kết quả hồ sơ."],
+  ["TO-BE", "Sửa gì thì tốt hơn thật, nhờ thay đổi nào?", "Sinh BPMN TO-BE, mô phỏng lại 10 lần trên cùng dòng hồ sơ, kiểm định Wilcoxon, ablation từng thay đổi."],
+];
+const COLS = { so_ho_so: "Số hồ sơ", so_bien_the: "Số biến thể", lam_viec_tb: "Làm việc TB (phút)", cycle_tb: "Lưu trú TB (phút)",
+  cycle_p90: "Lưu trú P90 (phút)", ty_le_tre_han: "Tỷ lệ trễ hạn", lam_lai_tb: "Làm lại TB", scenario: "Kịch bản", thuat_toan: "Thuật toán",
+  fitness: "Fitness", pct_vet_khop: "% vết khớp", precision: "Precision", generalization: "Generalization", simplicity: "Simplicity",
+  fitness_tb: "Fitness TB", khop_hoan_toan: "Khớp hoàn toàn", loai: "Loại độ lệch", hoat_dong: "Bước", activity: "Bước", lane: "Làn",
+  tan_suat: "Tần suất", cho_tb: "Chờ TB", cho_p90: "Chờ P90", xu_ly_tb: "Xử lý TB", tong_cho: "Tổng chờ", tong_xu_ly: "Tổng xử lý",
+  ty_trong_cho: "Tỷ trọng chờ", ty_trong_lam_viec: "Tỷ trọng làm việc", phuong_an: "Phương án", tre_han: "Trễ hạn", cho_tong_tb: "Tổng chờ TB",
+  asis_tb: "AS-IS TB (phút)", tobe_tb: "TO-BE TB (phút)", muc_giam: "Mức giảm", wilcoxon_p: "Wilcoxon p", van_de: "Vấn đề", phan_tu: "Phần tử",
+  chi_tiet: "Chi tiết", type: "Loại", name: "Tên", id: "ID", vet: "Vết", so_lan: "Số lần", variant: "Biến thể", ty_le: "Tỷ lệ",
+  mean: "Tỷ lệ trễ hạn", size: "Số hồ sơ", n_lam_lai: "Số lần làm lại", ton_luc_nop: "Hồ sơ tồn lúc nộp", tu: "Từ", den: "Đến", nhan: "Nhãn",
+  index: "", case_id: "Hồ sơ", enable_ts: "Sẵn sàng", start_ts: "Bắt đầu", end_ts: "Kết thúc", resource: "Người thực hiện", role: "Làn",
+  task_type: "Loại task", ket_qua: "Kết quả", sai_lech: "Sai lệch" };
+const PCT = new Set(["ty_le_tre_han", "khop_hoan_toan", "ty_trong_cho", "ty_trong_lam_viec", "ty_le", "mean", "tre_han"]);
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v); } kids.flat().forEach(k => k != null && e.append(k)); return e; };
+const nf = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 3 });
+const DEMO = window.DEMO || null;
+let current = { steps: [], img: f => "", files: null };
+
+function buildFlow() {
+  const flow = $("#flow");
+  flow.append(el("span", { class: "ev", title: "Bắt đầu: BPMN + log", "aria-hidden": "true" }));
+  STEPS.forEach(([t], i) => {
+    flow.append(el("span", { class: "arrow", "aria-hidden": "true" }));
+    const b = el("button", { class: "task", type: "button", id: `task-${i + 1}`, "data-state": "pending" },
+      el("span", { class: "k", text: `Bước ${i + 1}` }), el("span", { class: "t", text: t }));
+    b.addEventListener("click", () => $(`#step-${i + 1}`).scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
+    flow.append(b);
+  });
+  flow.append(el("span", { class: "arrow", "aria-hidden": "true" }), el("span", { class: "ev end", title: "Kết thúc: BPMN TO-BE", "aria-hidden": "true" }));
+}
+
+function renderTable(t, open) {
+  const pctTable = /vi phạm|Tỷ trọng thời gian/.test(t.title);
+  const head = el("tr", {}, t.columns.map(c => el("th", { text: COLS[c] ?? c })));
+  const body = t.rows.map(r => el("tr", {}, r.map((v, j) => {
+    const c = t.columns[j];
+    if (typeof v === "number") {
+      const asPct = PCT.has(c) || (pctTable && j > 0);
+      return el("td", { class: "n", text: asPct ? nf.format(Math.round(v * 1000) / 10) + "%" : nf.format(v) });
+    }
+    return el("td", { text: v == null ? "–" : String(v) });
+  })));
+  const d = el("details", {}, el("summary", { text: `${t.title} · ${t.rows.length} dòng` }),
+    el("div", { class: "tbl" }, el("table", {}, el("thead", {}, head), el("tbody", {}, body))));
+  if (open) d.open = true;
+  return d;
+}
+
+function renderStep(i, data, state) {
+  const [title, q] = STEPS[i - 1];
+  const sec = el("section", { class: "step", id: `step-${i}` },
+    el("div", { class: "step-head" }, el("span", { class: "num", text: `Bước ${i}` }), el("h2", { text: data?.name || title }), el("p", { class: "q", text: q })));
+  if (!data) {
+    sec.append(el("p", { class: "waiting", text: state === "running" ? "Đang chạy…" : `Chưa chạy. ${STEPS[i - 1][2]}` }));
+    return sec;
+  }
+  sec.append(el("dl", { class: "facts" }, data.facts.map(f => el("div", { class: "fact" }, el("dt", { text: f.label }), el("dd", { text: typeof f.value === "number" ? nf.format(f.value) : f.value })))));
+  if (data.notes.length) sec.append(el("ul", { class: "notes" }, data.notes.map(n => el("li", { text: n }))));
+  if (data.legend) sec.append(el("div", { class: "legend" }, Object.entries(data.legend).map(([k, v]) => el("span", { text: `${k}: ${v}` }))));
+  if (data.images.length) sec.append(el("div", { class: "figs" }, data.images.map(im => el("figure", {},
+    el("div", { class: "im" }, el("img", { src: current.img(im.file), alt: im.label, loading: "lazy" })), el("figcaption", { text: im.label })))));
+  data.tables.forEach((t, k) => sec.append(renderTable(t, k === 0)));
+  if (data.code) sec.append(el("details", {}, el("summary", { text: "Luật của cây quyết định" }), el("pre", { text: data.code })));
+  if (data.downloads && current.files) sec.append(el("div", { class: "dl" }, data.downloads.map(f => el("a", { class: "btn", href: current.files(f), text: `Tải ${f}` }))));
+  return sec;
+}
+
+function renderAll(runningStep) {
+  const main = $("#steps"); main.replaceChildren();
+  for (let i = 1; i <= 8; i++) {
+    const data = current.steps.find(s => s.n === i);
+    const state = data ? "done" : (runningStep === i ? "running" : "pending");
+    $(`#task-${i}`).dataset.state = current.error && runningStep === i ? "error" : state;
+    main.append(renderStep(i, data, state));
+  }
+}
+
+/* ---------------- Chế độ trình diễn ---------------- */
+function startDemo() {
+  document.querySelectorAll(".live-only").forEach(e => e.hidden = true);
+  document.querySelectorAll(".demo-only").forEach(e => e.hidden = false);
+  const seg = $("#samples");
+  DEMO.processes.forEach((p, k) => {
+    const b = el("button", { type: "button", "aria-pressed": k === 0 ? "true" : "false", text: p.label });
+    b.addEventListener("click", () => { seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); showDemo(p); });
+    seg.append(b);
+  });
+  showDemo(DEMO.processes[0]);
+}
+function showDemo(p) {
+  current = { steps: p.steps, img: f => p.images[f] || "", files: null };
+  $("#status").textContent = `${p.process.replace(/_/g, " ")} · ${p.bpmn}`;
+  renderAll(null);
+}
+
+/* ---------------- Chế độ chạy thật ---------------- */
+let sample = "";
+async function startLive() {
+  const seg = $("#samples");
+  try {
+    const names = await (await fetch("api/samples")).json();
+    names.forEach((n, k) => {
+      const b = el("button", { type: "button", "aria-pressed": "false", text: n.replace(/\.bpmn$/, "") });
+      b.addEventListener("click", () => { seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); sample = n; $("#bpmn").value = ""; });
+      if (n.includes("nghi-phep") || (k === 0 && !sample)) { seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); sample = n; }
+      seg.append(b);
+    });
+  } catch { $("#status").textContent = "Không đọc được danh sách tệp mẫu; hãy tải lên tệp .bpmn."; }
+  $("#bpmn").addEventListener("change", () => { if ($("#bpmn").files.length) seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); });
+  $("#form").addEventListener("submit", run);
+  renderAll(null);
+}
+async function run(ev) {
+  ev.preventDefault();
+  const fd = new FormData();
+  if ($("#bpmn").files.length) fd.append("bpmn", $("#bpmn").files[0]); else fd.append("sample", sample);
+  [...$("#logs").files].forEach(f => fd.append("logs", f));
+  ["n_cases", "n_rep", "sla"].forEach(k => fd.append(k, $("#" + k).value));
+  const st = $("#status"); st.className = ""; st.textContent = "Đang gửi…"; $("#run").disabled = true; $("#downloads").replaceChildren();
+  current = { steps: [], img: f => "", files: null, error: null };
+  renderAll(null);
+  let res;
+  try { res = await fetch("api/run", { method: "POST", body: fd }); } catch { return fail("Không kết nối được máy chủ. Kiểm tra ô chạy giao diện web còn đang chạy."); }
+  const j = await res.json();
+  if (!res.ok) return fail(j.error || "Máy chủ từ chối yêu cầu.");
+  const id = j.id;
+  current.img = f => `api/job/${id}/file/${encodeURIComponent(f)}`;
+  current.files = current.img;
+  poll(id);
+}
+async function poll(id) {
+  let job;
+  try { job = await (await fetch(`api/job/${id}`)).json(); } catch { return setTimeout(() => poll(id), 1500); }
+  current.steps = job.steps;
+  const step = job.current || (job.status === "error" ? job.steps.length + 1 : null);
+  current.error = job.status === "error";
+  renderAll(step);
+  const st = $("#status");
+  if (job.status === "done") {
+    st.textContent = `Xong 8 bước · ${(job.process || "").replace(/_/g, " ")} · log: ${job.n_logs ? job.n_logs + " tệp của text2BPMN" : "mô phỏng"}`;
+    $("#downloads").replaceChildren(el("a", { class: "btn", href: `api/job/${id}/zip`, text: "Tải toàn bộ kết quả (.zip)" }));
+    $("#run").disabled = false;
+  } else if (job.status === "error") {
+    fail(`Lỗi ở bước ${step}: ${job.error}`);
+  } else {
+    st.textContent = job.current ? `Đang chạy bước ${job.current}/8: ${STEPS[job.current - 1][0]}…` : "Đang chờ…";
+    setTimeout(() => poll(id), 1000);
+  }
+}
+function fail(msg) { const st = $("#status"); st.className = "err"; st.textContent = msg; $("#run").disabled = false; }
+
+buildFlow();
+if (DEMO) startDemo(); else startLive();
+</script>
