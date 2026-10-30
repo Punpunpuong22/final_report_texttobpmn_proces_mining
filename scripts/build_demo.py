@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import base64
 import glob
-import json
 import os
 import sys
 import tempfile
@@ -44,7 +43,8 @@ def run_one(path: str, n_rep: int, work: str) -> dict:
             fp = os.path.join(p.out, im["file"])
             if os.path.exists(fp):
                 images[im["file"]] = "data:image/png;base64," + base64.b64encode(open(fp, "rb").read()).decode()
-    return dict(label=LABELS.get(stem, stem), process=p.M["name"], bpmn=os.path.basename(path), steps=steps, images=images)
+    return dict(key=stem, label=LABELS.get(stem, stem), process=p.M["name"], bpmn=os.path.basename(path), steps=steps,
+                images=images)
 
 
 def main():
@@ -53,15 +53,21 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n-rep", type=int, default=10)
     ap.add_argument("--out", default=os.path.join(ROOT, "docs", "demo.html"))
+    ap.add_argument("--cache", help="tệp JSON lưu kết quả đã chạy; có sẵn thì dùng lại, chỉ dựng lại trang")
     a = ap.parse_args()
     order = ["quy-trinh-nghi-phep", "quy-trinh-tuyen-dung", "quy-trinh-dat-hang"]
     files = sorted(glob.glob(os.path.join(ROOT, "data", "bpmn", "*.bpmn")),
                    key=lambda f: order.index(os.path.basename(f)[:-5]) if os.path.basename(f)[:-5] in order else 9)
-    with tempfile.TemporaryDirectory() as work:
-        procs = [run_one(f, a.n_rep, work) for f in files]
-    page = open(os.path.join(ROOT, "src", "text2bpmn_mining", "web", "static", "index.html"), encoding="utf-8").read()
-    data = json.dumps(dict(processes=procs), ensure_ascii=False).replace("</", "<\\/")
-    page = page.replace("<script>", f"<script>window.DEMO = {data};</script>\n<script>", 1)
+    import json
+    if a.cache and os.path.exists(a.cache):
+        procs = json.load(open(a.cache, encoding="utf-8"))
+    else:
+        with tempfile.TemporaryDirectory() as work:
+            procs = [run_one(f, a.n_rep, work) for f in files]
+        if a.cache:
+            json.dump(procs, open(a.cache, "w", encoding="utf-8"), ensure_ascii=False)
+    from text2bpmn_mining.web.server import render_page
+    page = render_page({os.path.basename(f): f for f in files}, dict(processes=procs), full_document=False)
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     open(a.out, "w", encoding="utf-8").write(page)
     print(f"Đã ghi {a.out} ({os.path.getsize(a.out) / 1e6:.1f} MB)")

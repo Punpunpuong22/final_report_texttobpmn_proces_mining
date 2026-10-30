@@ -54,16 +54,23 @@ class Pipeline:
     def step2_event_log(self) -> dict:
         """Ưu tiên log của text2BPMN; nếu chưa có thì mô phỏng bốn kịch bản trên chính BPMN."""
         part1 = eventlog.load_part1_logs(self.cfg.part1_log_dir, self.M)
-        if part1 is not None:
-            self.events, self.source = part1, f"log text2BPMN ({self.cfg.part1_log_dir})"
+        calib = None
+        if part1 is not None and self.cfg.part1_logs_as != "doi_chieu":
+            self.events, self.source = part1, f"nhật ký có sẵn ({part1['scenario'].nunique()} tệp)"
         else:
             self.events, self.source = simulation.simulate_scenarios(self.M, self.cfg), "bộ mô phỏng của Phần 2"
+            if part1 is not None:
+                self.source += " (đã đối chiếu với log text2BPMN)"
+                calib = eventlog.calibration(part1, self.events)
+                for k, t in calib.items():
+                    t.to_csv(self._p(f"tab_doi_chieu_{k}.csv"))
         self.scen = list(dict.fromkeys(self.events["scenario"]))
         self.events.to_csv(self._p("event_log_all.csv"), index=False)
         pm4py.write_xes(eventlog.to_pm4py(self.events.drop(columns=["arrival"])), self._p("event_log_all.xes"))
         quality = pd.DataFrame({s: eventlog.validate_log(self.events[self.events.scenario == s], self.M["tasks"],
                                                          self.start_tasks, self.end_tasks) for s in self.scen})
-        self.r["step2"] = dict(source=self.source, scenarios=self.scen, shape=self.events.shape, quality=quality)
+        self.r["step2"] = dict(source=self.source, scenarios=self.scen, shape=self.events.shape, quality=quality,
+                               calib=calib)
         return self.r["step2"]
 
     # ------------------------------------------------------------ Bước 3

@@ -44,6 +44,20 @@ def _find_samples(root: str | None) -> dict:
     return {}
 
 
+def render_page(samples: dict, demo: dict | None = None, full_document: bool = True) -> str:
+    """Trang index.html kèm các BPMN mẫu (window.SAMPLES) và, nếu có, kết quả chạy sẵn (window.DEMO).
+    Tệp HTML viết không có khung <html> để dùng chung cho bản trình diễn; máy chủ thêm khung khi phục vụ."""
+    import json
+    with open(os.path.join(STATIC, "index.html"), encoding="utf-8") as f:
+        body = f.read()
+    data = {os.path.splitext(k)[0]: open(v, encoding="utf-8").read() for k, v in samples.items()}
+    inject = "<script>window.SAMPLES = " + json.dumps(data, ensure_ascii=False).replace("</", "<\\/") + ";"
+    if demo is not None:
+        inject += "\nwindow.DEMO = " + json.dumps(demo, ensure_ascii=False).replace("</", "<\\/") + ";"
+    body = body.replace("<script>", inject + "</script>\n<script>", 1)
+    return "<!doctype html>\n<html lang=\"vi\">\n" + body + "\n</html>" if full_document else body
+
+
 def create_app(work_dir: str | None = None, samples_dir: str | None = None) -> Flask:
     app = Flask(__name__, static_folder=None)
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
@@ -73,10 +87,7 @@ def create_app(work_dir: str | None = None, samples_dir: str | None = None) -> F
 
     @app.get("/")
     def index():
-        # Tệp HTML viết không có khung <html> để dùng chung cho bản trình diễn; thêm khung khi phục vụ trực tiếp.
-        with open(os.path.join(STATIC, "index.html"), encoding="utf-8") as f:
-            body = f.read()
-        return Response("<!doctype html>\n<html lang=\"vi\">\n" + body + "\n</html>", mimetype="text/html")
+        return Response(render_page(samples), mimetype="text/html")
 
     @app.get("/api/samples")
     def list_samples():
@@ -119,7 +130,8 @@ def create_app(work_dir: str | None = None, samples_dir: str | None = None) -> F
         try:
             cfg = Config(n_cases=num("n_cases", 200, int, 20, 1000), n_rep=num("n_rep", 10, int, 2, 30),
                          sla_minutes=num("sla", None, float, 1), seed=num("seed", 42, int),
-                         part1_log_dir=os.path.join(jdir, "logs") if n_logs else os.path.join(jdir, "_no_logs"))
+                         part1_log_dir=os.path.join(jdir, "logs") if n_logs else os.path.join(jdir, "_no_logs"),
+                         part1_logs_as="doi_chieu" if request.form.get("logs_as") == "doi_chieu" else "log")
         except ValueError:
             return jsonify(error="Tham số phải là số."), 400
         job = dict(id=jid, dir=jdir, status="queued", current=None, steps=[], error=None,

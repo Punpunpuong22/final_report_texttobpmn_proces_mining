@@ -80,6 +80,11 @@ class Config:
     n_rep: int = 10                          # số lần lặp khi so sánh AS-IS và TO-BE
     whatif_scenarios: tuple = ("S1_suon_se", "S2_truc_trac", "S3_qua_tai")
     part1_log_dir: str | None = None         # thư mục chứa log CSV/XES do text2BPMN xuất (nếu có)
+    # Cách dùng log của text2BPMN:
+    #   "log"       dùng thẳng làm nhật ký cho Bước 3–7 (log thật, có thời điểm hồ sơ đến)
+    #   "doi_chieu" log của text2BPMN chỉ có thời gian làm việc, chưa có hàng đợi: dùng để đối chiếu
+    #               thời gian làm việc và tỷ trọng từng bước, rồi mô phỏng 4 kịch bản có hàng đợi
+    part1_logs_as: str = "log"
 
     def resolve(self, process_name: str) -> "Config":
         """Điền các trường None bằng thiết lập có sẵn của quy trình."""

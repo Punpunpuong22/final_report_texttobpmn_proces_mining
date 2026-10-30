@@ -95,6 +95,36 @@ def validate_log(df: pd.DataFrame, tasks, start_tasks, end_tasks) -> dict:
             "hoạt động lạ": sorted(set(df.activity) - set(tasks))}
 
 
+def _match_scenario(name: str) -> str:
+    """Kịch bản Phần 2 tương ứng với một tệp log của text2BPMN (theo tên tệp)."""
+    n = name.lower()
+    return "S2_truc_trac" if any(w in n for w in ("truc", "trục", "trac", "trặc", "nhieu", "nhiều")) else "S1_suon_se"
+
+
+def calibration(part1: pd.DataFrame, sim: pd.DataFrame) -> dict:
+    """So log text2BPMN với log mô phỏng của Phần 2 ở hai chỉ số text2BPMN hiển thị:
+    thời gian làm việc mỗi hồ sơ và tỷ trọng thời gian từng bước."""
+    def work(df):
+        return (df.end_ts - df.start_ts).dt.total_seconds().groupby(df.case_id).sum() / 60
+
+    def share(df):
+        m = (df.end_ts - df.start_ts).dt.total_seconds().groupby(df.activity).sum()
+        return m / m.sum()
+
+    rows, shares = [], {}
+    for sc, g in part1.groupby("scenario", sort=False):
+        p2 = _match_scenario(str(sc))
+        h = sim[sim.scenario == p2]
+        w1, w2 = work(g).mean(), work(h).mean()
+        rows.append(dict(log_text2bpmn=sc, kich_ban_phan2=p2, ho_so_text2bpmn=g.case_id.nunique(),
+                         lam_viec_text2bpmn=round(w1, 1), lam_viec_phan2=round(w2, 1),
+                         chenh_lech=round((w2 - w1) / w1, 3) if w1 else None))
+        shares[f"{sc} (Phần 1)"] = share(g)
+        shares[f"{p2} (Phần 2)"] = share(h)
+    return dict(lam_viec=pd.DataFrame(rows).set_index("log_text2bpmn"),
+                ty_trong=pd.DataFrame(shares).fillna(0).round(3))
+
+
 def case_table(df: pd.DataFrame, sla: float | None = None) -> pd.DataFrame:
     """Một dòng mỗi hồ sơ: thời gian làm việc, thời gian lưu trú, biến thể, trễ hạn."""
     g = df.groupby("case_id")

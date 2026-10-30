@@ -46,25 +46,27 @@ PYTHONPATH=src python -m text2bpmn_mining data/bpmn/*.bpmn --n-rep 10
 ```
 Kiểm tra nhanh mã nguồn: `python tests/test_pipeline.py` (hoặc `pytest -q`).
 
-## Giao diện web
+## Giao diện web: text2BPMN đầy đủ (Phần 1 + Phần 2)
 
-Chạy cả tám bước từ trình duyệt: chọn tệp BPMN mẫu hoặc tải lên tệp `.bpmn` của bạn, thêm các tệp log CSV/XES
-do text2BPMN xuất (nếu có; mỗi tệp là một kịch bản), chỉnh số hồ sơ, số lần lặp, thời hạn rồi bấm **Chạy 8 bước**.
-Thanh luồng vẽ theo kiểu BPMN đổi màu khi từng bước chạy xong; mỗi bước hiện câu hỏi, chỉ số chính, nhận xét tự động,
-hình (BPMN, DFG, mô hình khám phá, heatmap, BPMN TO-BE) và bảng; cuối cùng tải toàn bộ kết quả dạng `.zip`.
+Một trang chạy cả chuỗi: **Phần 1** viết quy trình bằng lời → danh sách bước → sơ đồ BPMN (kéo thả, đổi làn,
+sửa tên, kiểm tra lỗi nhanh) → thử 200 hồ sơ với hai kịch bản “Việc suôn sẻ” / “Nhiều trục trặc” → xuất nhật ký
+CSV/XES; **Phần 2** nhận thẳng sơ đồ và nhật ký đó, chạy tám bước khai phá quy trình và hiện kết quả từng bước
+(chỉ số, nhận xét, hình, bảng, BPMN TO-BE, tải `.zip`). Có thể mở sẵn một tệp `.bpmn` hoặc dùng nhật ký có sẵn.
 
-| Nơi chạy | Cách mở |
-|---|---|
-| Colab | Chạy ô **Giao diện web** ở cuối notebook, bấm đường dẫn hiện ra |
-| Máy cá nhân | `PYTHONPATH=src python -m text2bpmn_mining.web` rồi mở http://127.0.0.1:8050 |
-| Kaggle | Không hỗ trợ mở cổng web; dùng các ô của notebook |
+| Nơi chạy | Phần 1 | Phần 2 |
+|---|---|---|
+| Colab: ô **Giao diện web** cuối notebook | chạy trong trình duyệt | Python chạy thật với mọi sơ đồ |
+| Máy cá nhân: `PYTHONPATH=src python -m text2bpmn_mining.web` → http://127.0.0.1:8050 | như trên | như trên |
+| `docs/demo.html` (mở trực tiếp, không cần máy chủ) | như trên | kết quả chạy sẵn cho 3 sơ đồ mẫu |
 
-Bản trình diễn tĩnh `docs/demo.html` chứa kết quả đã chạy sẵn trên ba tệp mẫu (mở trực tiếp bằng trình duyệt, không cần
-máy chủ, không tải tệp riêng lên được). Tạo lại bằng `PYTHONHASHSEED=2 PYTHONPATH=src python scripts/build_demo.py`.
+Ở Bước 2, nhật ký của Phần 1 (chỉ có thời gian làm việc) được dùng để **đối chiếu**: bộ mô phỏng của Phần 2 chạy
+trên cùng BPMN phải cho thời gian làm việc và tỷ trọng từng bước khớp với Phần 1, rồi mới thêm hồ sơ đến theo thời
+gian và số người mỗi làn để có hàng đợi (`Config(part1_logs_as="doi_chieu")`). Nhật ký thật tải lên thì được dùng
+trực tiếp (`part1_logs_as="log"`, mặc định khi chạy notebook).
 
-Mã: `src/text2bpmn_mining/web/server.py` (Flask: `/api/run` nhận tệp và chạy pipeline trong luồng nền,
-`/api/job/<id>` trả kết quả từng bước), `web/static/index.html` (giao diện, dùng chung cho bản trình diễn),
-`report.py` (chuyển kết quả mỗi bước thành JSON).
+Văn bản mới được chuyển thành danh sách bước bằng Claude khi trang mở trên claude.ai, bằng bộ quy tắc khi mở từ
+Colab hoặc máy cá nhân; ba ví dụ dùng đúng tệp BPMN text2BPMN đã sinh. Tạo lại bản tĩnh:
+`PYTHONHASHSEED=2 PYTHONPATH=src python scripts/build_demo.py`.
 
 ## Cấu trúc kho
 

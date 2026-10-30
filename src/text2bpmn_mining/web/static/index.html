@@ -1,87 +1,117 @@
-<!-- Một trang dùng cho hai chế độ:
-     - Chạy thật: máy chủ Flask (python -m text2bpmn_mining.web) trả kết quả qua /api.
-     - Trình diễn: window.DEMO chứa sẵn kết quả đã chạy (tạo bằng scripts/build_demo.py). -->
-<title>Khai phá quy trình text2BPMN</title>
+<!-- text2BPMN: Phần 1 (văn bản → BPMN → mô phỏng → nhật ký) nối thẳng sang Phần 2 (khai phá quy trình 8 bước).
+     Chạy được ở hai nơi:
+     - Máy chủ Flask (python -m text2bpmn_mining.web, hoặc ô "Giao diện web" trên Colab): Phần 2 chạy thật bằng pm4py.
+     - Trang tĩnh (docs/demo.html): Phần 1 chạy trong trình duyệt; Phần 2 hiện kết quả chạy sẵn cho ba quy trình mẫu.
+     Máy chủ và scripts/build_demo.py chèn window.SAMPLES (BPMN mẫu) và window.DEMO (kết quả chạy sẵn) trước khối script. -->
+<title>text2BPMN</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lora:wght@500;600&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Bố cục: một cột làm việc; thanh luồng 8 bước vẽ như sơ đồ BPMN (sự kiện bắt đầu → 8 công việc → sự kiện kết thúc). */
+/* Bảng màu và kiểu chữ giữ theo text2BPMN: nền giấy kem, mực nâu đen, chữ Be Vietnam Pro và IBM Plex Mono. */
 :root {
-  --paper: #F2F4F7; --surface: #FFFFFF; --ink: #14243A; --muted: #556275; --rule: #D5DBE3;
-  --accent: #B4491C; --accent-tint: #FBEDE4; --blue: #2E5E8C; --blue-tint: #E6EEF6;
-  --good: #2C7A55; --good-tint: #E3F2EA; --bad: #B3261E; --bad-tint: #FBE7E5; --warn: #9A6A00;
-  --font-display: "Lora", Georgia, serif;
-  --font-body: "Be Vietnam Pro", "Segoe UI", Roboto, Arial, sans-serif;
-  --font-data: "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
-  --radius: 10px;
+  --paper: #F3F1EC; --sheet: #FFFCF8; --ink: #1C1B19; --ink-soft: #2E2C28; --muted: #6F6A62; --line: #E4DFD6;
+  --accent: #A9441A; --accent-tint: #F7E6DC; --good: #2D6A4F; --good-tint: #E2F0E8; --bad: #A4262C; --bad-tint: #F8E3E2;
+  --warn: #8A5A00; --warn-tint: #F7EED9; --bar: #BFB6A8;
+  --dg-fill: #FFFFFF; --dg-stroke: #1C1B19; --dg-lane: #FBF9F5;
+  --font-sans: "Be Vietnam Pro", "Noto Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --paper: #0E1622; --surface: #162131; --ink: #E5EBF2; --muted: #9AA8B9; --rule: #2A394D;
-  --accent: #E58A5D; --accent-tint: #3A2419; --blue: #86ADD6; --blue-tint: #1B2C42;
-  --good: #6CC59A; --good-tint: #163327; --bad: #F08A80; --bad-tint: #3B1C1A; --warn: #E2B44D; color-scheme: dark } }
+  --paper: #161513; --sheet: #1F1E1B; --ink: #ECE8E1; --ink-soft: #D9D4CB; --muted: #A39D93; --line: #36332E;
+  --accent: #E08A5E; --accent-tint: #3A261C; --good: #79C59B; --good-tint: #1B2E24; --bad: #F08C8C; --bad-tint: #3A1D1D;
+  --warn: #E2B85C; --warn-tint: #352B17; --bar: #5E584F; --dg-fill: #24221F; --dg-stroke: #E8E3DA; --dg-lane: #1B1A18; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --paper: #0E1622; --surface: #162131; --ink: #E5EBF2; --muted: #9AA8B9; --rule: #2A394D;
-  --accent: #E58A5D; --accent-tint: #3A2419; --blue: #86ADD6; --blue-tint: #1B2C42;
-  --good: #6CC59A; --good-tint: #163327; --bad: #F08A80; --bad-tint: #3B1C1A; --warn: #E2B44D; color-scheme: dark }
+  --paper: #161513; --sheet: #1F1E1B; --ink: #ECE8E1; --ink-soft: #D9D4CB; --muted: #A39D93; --line: #36332E;
+  --accent: #E08A5E; --accent-tint: #3A261C; --good: #79C59B; --good-tint: #1B2E24; --bad: #F08C8C; --bad-tint: #3A1D1D;
+  --warn: #E2B85C; --warn-tint: #352B17; --bar: #5E584F; --dg-fill: #24221F; --dg-stroke: #E8E3DA; --dg-lane: #1B1A18; color-scheme: dark }
 * { box-sizing: border-box }
 img { max-width: 100% } [hidden] { display: none !important }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--font-body);
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--font-sans) }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px }
-.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px }
-h1, h2 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0 }
-h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15 }
-h2 { font-size: 22px; line-height: 1.25 }
-.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent) }
-.lead { color: var(--muted); max-width: 70ch; margin: 6px 0 0 }
-header.top { display: flex; flex-direction: column; gap: 6px }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600 }
+h1 { font-size: 30px; letter-spacing: -.02em; line-height: 1.2 }
+h2 { font-size: 17px } h3 { font-size: 15px }
+p { margin: 0 }
+.muted { color: var(--muted) } .small { font-size: 13.5px }
+header.top { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 20px }
+header.top p { max-width: 68ch; color: var(--muted) }
+.part { display: flex; flex-direction: column; gap: 16px }
+.part-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px }
+.part-head .tag { font: 500 12px var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--accent) }
+.part-head p { color: var(--muted); font-size: 14px; flex-basis: 100% }
+section.card { background: var(--sheet); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; scroll-margin-top: 12px }
+.card-head { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; align-items: flex-end }
+.card-head > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0 }
+.num { color: var(--muted); margin-right: 8px; font-variant-numeric: tabular-nums }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+button, .btn { font: 500 14px var(--font-sans); min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--sheet); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none }
+button:hover:not(:disabled) { background: var(--paper) }
+button.primary { background: var(--ink); color: var(--sheet); border-color: var(--ink) }
+button.primary:hover:not(:disabled) { background: var(--ink-soft) }
+button.ghost { border-color: transparent; background: transparent }
+button[aria-pressed="true"], button[aria-pressed="true"]:hover:not(:disabled) { background: var(--ink); color: var(--sheet); border-color: var(--ink) }
+button:disabled { opacity: .5; cursor: not-allowed }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+textarea, input[type=number] { font: 14px/1.6 var(--font-sans); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0 }
+textarea { min-height: 140px; resize: vertical }
+textarea.mono { font-family: var(--font-mono); font-size: 13px; min-height: 180px }
+details > summary { cursor: pointer; font-weight: 500; font-size: 14px }
+pre { font: 12.5px/1.5 var(--font-mono); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 0 }
+.status { font-size: 13.5px; color: var(--muted) } .status.err { color: var(--bad) } .status.ok { color: var(--good) }
 
-/* Bảng điều khiển */
-.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; display: grid; gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) }
-.field { display: flex; flex-direction: column; gap: 6px; min-width: 0 }
-.field > label, .field > .lbl { font-weight: 600; font-size: 13px }
-.hint { font-size: 12.5px; color: var(--muted) }
-select, input[type=number], input[type=file] { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; min-width: 0; width: 100% }
-input[type=file] { padding: 6px }
-.seg { display: flex; flex-wrap: wrap; gap: 6px }
-.seg button { font: inherit; font-size: 13.5px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer }
-.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink) }
-.params { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px }
-.params .field label { font-weight: 500; font-size: 12.5px; color: var(--muted) }
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; grid-column: 1 / -1; border-top: 1px solid var(--rule); padding-top: 16px }
-button.primary { font: inherit; font-weight: 600; background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer }
-button.primary:disabled { opacity: .55; cursor: progress }
-a.btn { font-weight: 600; font-size: 13.5px; color: var(--blue); text-decoration: none; border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; background: var(--surface) }
-:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px }
-#status { font-size: 13.5px; color: var(--muted) }
-#status.err { color: var(--bad) }
-.demo-note { grid-column: 1 / -1; font-size: 13.5px; color: var(--muted); background: var(--blue-tint); border-radius: 8px; padding: 10px 12px }
+/* Khung sơ đồ */
+.frame { height: min(70vh, 34rem); min-height: 20rem; border: 1px dashed var(--line); border-radius: 8px; background: var(--paper); overflow: auto; position: relative }
+.frame.has { border-style: solid; background: var(--dg-fill) }
+.frame .empty { height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: var(--muted); font-size: 14px }
+.frame svg { display: block; touch-action: none; user-select: none }
+.frame .node { cursor: grab } .frame .node:active { cursor: grabbing }
+.frame .node.sel rect, .frame .node.sel circle, .frame .node.sel path.shape { stroke: var(--accent) }
+.rename { position: absolute; font: 13px var(--font-sans); padding: 4px 6px; border: 1.5px solid var(--accent); border-radius: 6px; background: var(--sheet); color: var(--ink); z-index: 2 }
+.lint { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px }
+.lint li { padding: 6px 10px; border-radius: 6px; background: var(--warn-tint); color: var(--ink) }
+.lint li.ok { background: var(--good-tint) }
+.lint b { font-weight: 600 }
 
-/* Thanh luồng kiểu BPMN */
-.flow-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius) }
-.flow { display: flex; align-items: center; gap: 0; padding: 18px 16px; min-width: max-content }
+/* Mô phỏng Phần 1 */
+.sims { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px }
+.sim { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: var(--paper) }
+.sim .big { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums }
+.bars { display: flex; flex-direction: column; gap: 6px }
+.bar { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 13px }
+.bar .t { position: relative; min-width: 0 }
+.bar .t span { position: relative; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; padding: 2px 6px }
+.bar .t i { position: absolute; inset: 0 auto 0 0; background: var(--bar); border-radius: 4px; opacity: .55 }
+.bar .v { text-align: right; font-family: var(--font-mono); font-size: 12.5px }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13.5px }
+.kv dt { color: var(--muted) } .kv dd { margin: 0; font-weight: 500 }
+
+/* Bảng */
+.tbl { overflow-x: auto }
+table { border-collapse: collapse; font-size: 13px; width: 100% }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-weight: 600; color: var(--muted); font-size: 12px; white-space: nowrap }
+td.n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap }
+
+/* Phần 2: thanh luồng 8 bước vẽ như BPMN */
+.flow-wrap { overflow-x: auto; background: var(--sheet); border: 1px solid var(--line); border-radius: 18px }
+.flow { display: flex; align-items: center; padding: 16px; min-width: max-content }
 .ev { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--muted); flex: none }
 .ev.end { border-width: 4px; border-color: var(--ink) }
-.arrow { width: 22px; height: 2px; background: var(--muted); position: relative; flex: none }
+.arrow { width: 20px; height: 2px; background: var(--muted); position: relative; flex: none }
 .arrow::after { content: ""; position: absolute; right: -1px; top: -4px; border-left: 7px solid var(--muted); border-top: 5px solid transparent; border-bottom: 5px solid transparent }
-.task { font: inherit; text-align: left; width: 118px; min-height: 64px; border: 1.5px solid var(--rule); border-radius: 9px; background: var(--paper); color: var(--ink);
-  padding: 8px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; flex: none }
-.task .k { font: 500 11px var(--font-data); color: var(--muted) }
+.task { text-align: left; width: 116px; min-height: 62px; border: 1.5px solid var(--line); border-radius: 9px; background: var(--paper); padding: 8px 10px; flex-direction: column; align-items: flex-start; gap: 2px; flex: none }
+.task .k { font: 500 11px var(--font-mono); color: var(--muted) }
 .task .t { font-size: 12.5px; font-weight: 600; line-height: 1.25 }
 .task[data-state="running"] { border-color: var(--accent); background: var(--accent-tint); animation: pulse 1.2s ease-in-out infinite }
 .task[data-state="done"] { border-color: var(--good); background: var(--good-tint) }
 .task[data-state="error"] { border-color: var(--bad); background: var(--bad-tint) }
 @keyframes pulse { 50% { box-shadow: 0 0 0 4px var(--accent-tint) } }
 @media (prefers-reduced-motion: reduce) { .task[data-state="running"] { animation: none } }
-
-/* Kết quả từng bước */
-.step { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; scroll-margin-top: 16px }
-.step-head { display: flex; flex-direction: column; gap: 4px }
-.step-head .num { font: 500 12px var(--font-data); color: var(--accent) }
-.q { color: var(--muted); margin: 0 }
-.waiting { color: var(--muted); font-size: 13.5px; border: 1px dashed var(--rule); border-radius: 8px; padding: 12px }
+.params { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px }
+.params label { font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 0 }
 .fact { background: var(--paper); border-radius: 8px; padding: 10px 12px; min-width: 0 }
 .fact dt { font-size: 12px; color: var(--muted) }
@@ -89,79 +119,729 @@ a.btn { font-weight: 600; font-size: 13.5px; color: var(--blue); text-decoration
 .notes { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px }
 .notes li { border-left: 3px solid var(--accent); padding: 2px 0 2px 10px; max-width: 90ch }
 .legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px }
-.legend span { background: var(--blue-tint); border-radius: 6px; padding: 4px 8px }
-.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px }
+.legend span { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px }
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px }
 figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0 }
-figure .im { background: #FFFFFF; border: 1px solid var(--rule); border-radius: 8px; padding: 8px; display: flex; justify-content: center }
+figure .im { background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; justify-content: center }
 figure img { max-height: 420px; max-width: 100%; height: auto; object-fit: contain }
 figcaption { font-size: 12.5px; color: var(--muted) }
-details { border: 1px solid var(--rule); border-radius: 8px; min-width: 0 }
-summary { cursor: pointer; padding: 10px 12px; font-weight: 600; font-size: 14px }
-.tbl { overflow-x: auto; padding: 0 12px 12px }
-table { border-collapse: collapse; font-size: 13px; width: 100% }
-th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top }
-th { font-weight: 600; color: var(--muted); font-size: 12px; white-space: nowrap }
-td.n { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap }
-pre { font: 12px/1.45 var(--font-data); overflow-x: auto; margin: 0; padding: 0 12px 12px }
-.dl { display: flex; flex-wrap: wrap; gap: 8px }
+details.box { border: 1px solid var(--line); border-radius: 8px; min-width: 0 }
+details.box > summary { padding: 10px 12px }
+details.box > .tbl, details.box > pre { margin: 0 12px 12px }
+.waiting { color: var(--muted); font-size: 13.5px; border: 1px dashed var(--line); border-radius: 8px; padding: 12px }
+.note-box { font-size: 14px; background: var(--warn-tint); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px }
 footer { font-size: 12.5px; color: var(--muted) }
-footer a { color: var(--blue); overflow-wrap: anywhere }
-@media (max-width: 640px) { .params { grid-template-columns: 1fr } .step, .panel { padding: 14px } }
+footer a { color: inherit; overflow-wrap: anywhere }
+@media (max-width: 640px) { .params { grid-template-columns: 1fr } section.card { padding: 14px } h1 { font-size: 26px } }
 </style>
 
 <div class="wrap">
   <header class="top">
-    <span class="eyebrow">Phần 2 · Khai phá quy trình</span>
-    <h1>Từ một tệp BPMN đến BPMN cải tiến</h1>
-    <p class="lead">Tải lên mô hình BPMN do text2BPMN xuất (và nhật ký sự kiện nếu có). Trang chạy tám bước: kiểm tra mô hình, lấy log, thống kê, khám phá, tuân thủ, điểm nghẽn, nguyên nhân trễ hạn và đánh giá BPMN TO-BE.</p>
+    <h1>text2BPMN</h1>
+    <p>Viết quy trình bằng lời thường, nhận sơ đồ BPMN, thử chạy 200 hồ sơ để lấy nhật ký sự kiện, rồi khai phá nhật ký đó để tìm chỗ hồ sơ bị giữ lại và kiểm chứng một BPMN cải tiến.</p>
   </header>
 
-  <form class="panel" id="form" autocomplete="off">
-    <div class="field" id="f-model">
-      <span class="lbl">Mô hình BPMN</span>
-      <div class="seg" id="samples" role="group" aria-label="Chọn quy trình mẫu"></div>
-      <div class="live-only field">
-        <label for="bpmn">Hoặc tải tệp của bạn (.bpmn)</label>
-        <input type="file" id="bpmn" name="bpmn" accept=".bpmn,.xml">
-      </div>
-    </div>
-    <div class="field live-only">
-      <label for="logs">Event log của text2BPMN (tuỳ chọn)</label>
-      <input type="file" id="logs" name="logs" accept=".csv,.xes" multiple>
-      <span class="hint">Mỗi tệp CSV/XES là một kịch bản. Để trống thì trang mô phỏng 4 kịch bản trên chính BPMN.</span>
-    </div>
-    <div class="field live-only">
-      <span class="lbl">Tham số</span>
-      <div class="params">
-        <div class="field"><label for="n_cases">Hồ sơ mỗi kịch bản</label><input type="number" id="n_cases" name="n_cases" value="200" min="20" max="1000"></div>
-        <div class="field"><label for="n_rep">Lần lặp what-if</label><input type="number" id="n_rep" name="n_rep" value="10" min="2" max="30"></div>
-        <div class="field"><label for="sla">Thời hạn (phút)</label><input type="number" id="sla" name="sla" placeholder="tự động" min="1"></div>
-      </div>
-      <span class="hint">Thời hạn để trống = 1,5 × P90 thời gian lưu trú của kịch bản thuận lợi.</span>
-    </div>
-    <div class="actions">
-      <button class="primary live-only" id="run" type="submit">Chạy 8 bước</button>
-      <span id="status" role="status" aria-live="polite"></span>
-      <span class="dl" id="downloads"></span>
-    </div>
-    <p class="demo-note demo-only" hidden>Bản trình diễn: kết quả đã chạy sẵn trên ba tệp BPMN mẫu bằng đúng mã nguồn của nhóm (200 hồ sơ mỗi kịch bản, 10 lần lặp). Muốn chạy tệp BPMN hoặc log của bạn, mở giao diện web từ notebook trên Colab hoặc chạy <code>python -m text2bpmn_mining.web</code>.</p>
-  </form>
+  <!-- ========================= PHẦN 1 ========================= -->
+  <div class="part">
+    <div class="part-head"><span class="tag">Phần 1</span><h2>Từ văn bản đến BPMN và nhật ký</h2></div>
 
-  <div class="flow-wrap"><nav class="flow" id="flow" aria-label="Tám bước của pipeline"></nav></div>
-  <main id="steps" style="display:flex;flex-direction:column;gap:16px"></main>
-  <footer>Dữ liệu mặc định là mô phỏng với tham số giả định; kết quả minh hoạ phương pháp. Mã nguồn: <a href="https://github.com/Punpunpuong22/final_report_texttobpmn_proces_mining" target="_blank" rel="noopener">github.com/Punpunpuong22/final_report_texttobpmn_proces_mining</a></footer>
+    <section class="card" id="s1">
+      <div class="card-head"><div><h2><span class="num">1</span>Viết quy trình</h2>
+        <p class="small muted">Kể tuần tự ai làm gì. Câu “Nếu …, …” tạo nhánh; “… và … song song” tạo hai việc chạy cùng lúc.</p></div></div>
+      <div class="row" id="examples" role="group" aria-label="Ví dụ"></div>
+      <textarea id="text" aria-label="Mô tả quy trình" placeholder="Ví dụ: Nhân viên gửi đơn nghỉ phép. Quản lý xem xét đơn. Nếu quản lý đồng ý, nhân sự ghi nhận nghỉ phép và nhân viên nhận thông báo đã duyệt. Nếu từ chối, quản lý ghi lý do từ chối và nhân viên nhận thông báo từ chối."></textarea>
+      <div class="row">
+        <button class="primary" id="draw" type="button" disabled>Vẽ sơ đồ</button>
+        <button id="example" type="button">Xem ví dụ</button>
+        <span class="status" id="draw-status" role="status" aria-live="polite"></span>
+      </div>
+      <details id="dsl-box">
+        <summary>Sửa danh sách bước</summary>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+          <p class="small muted">Danh sách bước là bản trung gian giữa văn bản và sơ đồ. Mở khi sơ đồ chưa đúng: sửa các dòng rồi bấm Vẽ lại.</p>
+          <textarea class="mono" id="dsl" spellcheck="false" aria-label="Danh sách bước"></textarea>
+          <div class="row"><button id="redraw" type="button" disabled>Vẽ lại</button><span class="status" id="dsl-status" role="status"></span></div>
+          <details><summary>Cách viết</summary><pre style="margin-top:8px">process "Tên quy trình"
+lane "Vai trò"
+start s1 "Bắt đầu" lane "Vai trò"
+task t1 "Việc chung" lane "Vai trò"
+user u1 "Việc của người"
+service v1 "Việc của hệ thống"
+xor x1 "Câu hỏi?"
+and a1 "Làm song song"
+end e1 "Kết thúc"
+s1 -> t1
+t1 -> x1
+x1 -> u1 "Có"
+x1 -> v1 "Không"</pre><p class="small muted" style="margin-top:6px">Phần tử không ghi <code>lane</code> thuộc làn khai báo gần nhất phía trên.</p></details>
+        </div>
+      </details>
+    </section>
+
+    <section class="card" id="s2">
+      <div class="card-head"><div><h2><span class="num">2</span>Xem sơ đồ</h2>
+        <p class="small muted">Kéo thả để xếp lại, kéo sang làn khác để đổi người làm. Nhấp đúp vào chữ để sửa tên bước.</p></div>
+        <div class="row"><label class="btn">Mở tệp .bpmn<input type="file" id="open-bpmn" accept=".bpmn,.xml" hidden></label><button id="fit" type="button" disabled>Vừa khung</button><button class="primary" id="dl-bpmn" type="button" disabled>Tải sơ đồ (.bpmn)</button></div></div>
+      <div class="frame" id="frame"><div class="empty">Sơ đồ hiện ở đây sau khi bạn viết quy trình, hoặc bấm Xem ví dụ.</div></div>
+      <ul class="lint" id="lint" hidden></ul>
+    </section>
+
+    <section class="card" id="s3">
+      <div class="card-head"><div><h2><span class="num">3</span>Thử với nhiều hồ sơ</h2>
+        <p class="small muted">Chạy hồ sơ qua sơ đồ theo hai kịch bản. Số phút là thời gian làm việc; thời gian chờ được đo ở Phần 2.</p></div></div>
+      <div class="row">
+        <label class="small muted" style="display:flex;align-items:center;gap:8px">Số hồ sơ <input type="number" id="ncases" value="200" min="20" max="1000" style="width:96px"></label>
+        <button id="sim-ok" type="button" disabled>Việc suôn sẻ</button>
+        <button id="sim-bad" type="button" disabled>Nhiều trục trặc</button>
+      </div>
+      <div class="sims" id="sims"></div>
+    </section>
+
+    <section class="card" id="s4">
+      <div class="card-head"><div><h2><span class="num">4</span>Xuất nhật ký sự kiện</h2>
+        <p class="small muted">Mỗi kịch bản là một nhật ký: mỗi dòng là một lần làm một bước của một hồ sơ, có giờ bắt đầu, giờ xong, người làm.</p></div>
+        <div class="row"><label class="btn live-only">Dùng nhật ký có sẵn<input type="file" id="own-logs" accept=".csv,.xes" multiple hidden></label><button id="dl-csv" type="button" disabled>Tải CSV</button><button class="primary" id="dl-zip" type="button" disabled>Tải BPMN + nhật ký (.zip)</button></div></div>
+      <div id="log-preview"><p class="waiting">Chạy ít nhất một kịch bản ở bước 3 để có nhật ký.</p></div>
+    </section>
+  </div>
+
+  <!-- ========================= PHẦN 2 ========================= -->
+  <div class="part" id="p2">
+    <div class="part-head"><span class="tag">Phần 2</span><h2>Khai phá quy trình trên BPMN và nhật ký vừa tạo</h2>
+      <p>Đầu vào là sơ đồ ở bước 2 và nhật ký ở bước 4. Tám bước trả lời: mô hình có chạy đúng không, hồ sơ chờ ở đâu, vì sao trễ hạn, sửa gì thì nhanh hơn thật.</p></div>
+
+    <section class="card" id="p2-run">
+      <div class="params live-only">
+        <label>Hồ sơ mỗi kịch bản<input type="number" id="p2-ncases" value="200" min="20" max="1000"></label>
+        <label>Số lần lặp khi so sánh AS-IS / TO-BE<input type="number" id="p2-nrep" value="10" min="2" max="30"></label>
+        <label>Thời hạn xử lý (phút)<input type="number" id="p2-sla" placeholder="tự động" min="1"></label>
+      </div>
+      <div class="row">
+        <button class="primary" id="run-p2" type="button" disabled>Chạy Phần 2</button>
+        <span class="status" id="p2-status" role="status" aria-live="polite">Cần sơ đồ ở bước 2.</span>
+        <span class="row" id="p2-downloads"></span>
+      </div>
+      <div class="note-box" id="p2-offline" hidden></div>
+    </section>
+
+    <div class="flow-wrap"><nav class="flow" id="flow" aria-label="Tám bước của Phần 2"></nav></div>
+    <div id="steps" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div>
+
+  <footer>Thời gian từng bước, tỷ lệ nhánh, số người mỗi làn và thời hạn là giả định để minh hoạ phương pháp. Mã nguồn: <a href="https://github.com/Punpunpuong22/final_report_texttobpmn_proces_mining" target="_blank" rel="noopener">github.com/Punpunpuong22/final_report_texttobpmn_proces_mining</a></footer>
 </div>
 
 <script>
+"use strict";
+/* ============================================================
+   Tiện ích chung
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v); } kids.flat().forEach(k => k != null && e.append(k)); return e; };
+const SVGNS = "http://www.w3.org/2000/svg";
+const sv = (tag, attrs = {}) => { const e = document.createElementNS(SVGNS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+const nf = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
+const nf3 = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 3 });
+const pct = v => nf.format(Math.round(v * 1000) / 10) + "%";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const slug = s => (s || "quy-trinh").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "quy-trinh";
+const SAMPLES = window.SAMPLES || {};
+const DEMO = window.DEMO || null;
+const claudeUse = name => (window.claude && window.claude.use) ? window.claude.use(name).catch(() => null) : Promise.resolve(null);
+
+/* ============================================================
+   Mô hình BPMN trong trang
+   model = { name, lanes:[{id,name,y,h}], nodes:{id:{id,type,name,lane,x,y,w,h}}, flows:[{id,src,tgt,name}] }
+   ============================================================ */
+const TASK_TYPES = ["task", "userTask", "serviceTask", "manualTask", "scriptTask", "sendTask", "receiveTask", "businessRuleTask"];
+const SYSTEM_TYPES = ["serviceTask", "scriptTask", "businessRuleTask"];
+const NODE_TYPES = [...TASK_TYPES, "startEvent", "endEvent", "exclusiveGateway", "parallelGateway", "inclusiveGateway", "intermediateCatchEvent", "intermediateThrowEvent"];
+const SIZE = t => t.endsWith("Event") ? [36, 36] : t.endsWith("Gateway") ? [50, 50] : [148, 80];
+const LANE_X = 86, POOL_X = 56, LANE_MIN = 152;
+const isPositive = lb => { const l = (lb || "").toLowerCase(); if (["không", "từ chối", "no", "hết"].some(w => l.includes(w))) return false; return ["có", "đạt", "đồng ý", "trúng", "duyệt", "yes", "ok"].some(w => l.includes(w)); };
+
+function parseBpmn(xml) {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  if (doc.getElementsByTagName("parsererror").length) throw new Error("Tệp BPMN không đọc được (XML lỗi).");
+  const all = n => [...doc.getElementsByTagNameNS("*", n)];
+  const proc = all("process")[0];
+  if (!proc) throw new Error("Không thấy <process> trong tệp.");
+  const m = { name: proc.getAttribute("name") || all("participant")[0]?.getAttribute("name") || "Quy trình", lanes: [], nodes: {}, flows: [] };
+  const laneOf = {};
+  all("lane").forEach(l => { m.lanes.push({ id: l.getAttribute("id"), name: l.getAttribute("name") || "Làn" }); [...l.getElementsByTagNameNS("*", "flowNodeRef")].forEach(r => laneOf[r.textContent.trim()] = l.getAttribute("name") || "Làn"); });
+  [...proc.children].forEach(c => {
+    const t = c.localName;
+    if (NODE_TYPES.includes(t)) { const [w, h] = SIZE(t); m.nodes[c.getAttribute("id")] = { id: c.getAttribute("id"), type: t, name: c.getAttribute("name") || "", lane: laneOf[c.getAttribute("id")] || null, w, h }; }
+    if (t === "sequenceFlow") m.flows.push({ id: c.getAttribute("id"), src: c.getAttribute("sourceRef"), tgt: c.getAttribute("targetRef"), name: c.getAttribute("name") || "" });
+  });
+  if (!m.lanes.length) m.lanes.push({ id: "Lane_1", name: "Người thực hiện" });
+  Object.values(m.nodes).forEach(n => { if (!n.lane) n.lane = m.lanes[0].name; });
+  // Toạ độ từ phần DI (nếu tệp có)
+  const shapes = {};
+  all("BPMNShape").forEach(s => { const b = s.getElementsByTagNameNS("*", "Bounds")[0]; if (b) shapes[s.getAttribute("bpmnElement")] = ["x", "y", "width", "height"].map(k => +b.getAttribute(k)); });
+  const laneShapes = m.lanes.map(l => shapes[l.id]);
+  const nodesHaveDI = Object.keys(m.nodes).every(id => shapes[id]);
+  if (nodesHaveDI && laneShapes.every(Boolean)) {
+    m.lanes.forEach((l, i) => { l.y = laneShapes[i][1]; l.h = laneShapes[i][3]; });
+    m.lanes.sort((a, b) => a.y - b.y);
+    Object.values(m.nodes).forEach(n => { const s = shapes[n.id]; n.x = s[0]; n.y = s[1]; n.w = s[2]; n.h = s[3]; });
+    m.width = Math.max(shapes[all("participant")[0]?.getAttribute("id")]?.[2] || 0, ...Object.values(m.nodes).map(n => n.x + n.w + 60 - POOL_X));
+  } else autoLayout(m);
+  return m;
+}
+
+/* Bố cục tự động: cột theo thứ tự xuất hiện trên đường đi dài nhất (bỏ cạnh quay lui), hàng theo làn. */
+function autoLayout(m) {
+  const ids = Object.keys(m.nodes), out = {}, inn = {};
+  ids.forEach(i => { out[i] = []; inn[i] = []; });
+  m.flows.forEach(f => { if (out[f.src] && inn[f.tgt]) { out[f.src].push(f); inn[f.tgt].push(f); } });
+  const back = new Set(), state = {};
+  const starts = ids.filter(i => m.nodes[i].type === "startEvent" || !inn[i].length);
+  const dfs = u => { state[u] = 1; out[u].forEach(f => { if (state[f.tgt] === 1) back.add(f.id); else if (!state[f.tgt]) dfs(f.tgt); }); state[u] = 2; };
+  starts.forEach(s => !state[s] && dfs(s)); ids.forEach(s => !state[s] && dfs(s));
+  const rank = {}; ids.forEach(i => rank[i] = 0);
+  for (let k = 0; k < ids.length; k++) m.flows.forEach(f => { if (!back.has(f.id) && rank[f.tgt] !== undefined && rank[f.src] !== undefined) rank[f.tgt] = Math.max(rank[f.tgt], rank[f.src] + 1); });
+  const usedLanes = m.lanes.filter(l => ids.some(i => m.nodes[i].lane === l.name));
+  m.lanes = usedLanes.length ? usedLanes : m.lanes.slice(0, 1);
+  const slot = {}; let y = 48;
+  m.lanes.forEach(l => {
+    const mine = ids.filter(i => m.nodes[i].lane === l.name).sort((a, b) => rank[a] - rank[b]);
+    const rows = {}; let maxRow = 0;
+    mine.forEach(i => { const r = rank[i]; rows[r] = (rows[r] || 0); slot[i] = rows[r]; maxRow = Math.max(maxRow, rows[r]); rows[r]++; });
+    l.y = y; l.h = Math.max(LANE_MIN, (maxRow + 1) * 124 + 28); y += l.h;
+    mine.forEach(i => { const n = m.nodes[i]; const cx = 200 + rank[i] * 200, cy = l.y + 76 + slot[i] * 124; n.x = cx - n.w / 2; n.y = cy - n.h / 2; });
+  });
+  m.width = Math.max(...ids.map(i => m.nodes[i].x + m.nodes[i].w), 300) + 70 - POOL_X;
+}
+
+/* Đường nối vuông góc giữa hai phần tử */
+function route(m, f) {
+  const s = m.nodes[f.src], t = m.nodes[f.tgt];
+  if (!s || !t) return [];
+  const sc = [s.x + s.w / 2, s.y + s.h / 2], tc = [t.x + t.w / 2, t.y + t.h / 2];
+  if (t.x > s.x + s.w - 4) {                         // đích nằm bên phải
+    if (Math.abs(sc[1] - tc[1]) < 3) return [[s.x + s.w, sc[1]], [t.x, tc[1]]];
+    if (s.type.endsWith("Gateway")) { const y0 = tc[1] < sc[1] ? s.y : s.y + s.h; return [[sc[0], y0], [sc[0], tc[1]], [t.x, tc[1]]]; }
+    const mx = Math.round((s.x + s.w + t.x) / 2);
+    return [[s.x + s.w, sc[1]], [mx, sc[1]], [mx, tc[1]], [t.x, tc[1]]];
+  }
+  if (Math.abs(sc[0] - tc[0]) < 30) return tc[1] > sc[1] ? [[sc[0], s.y + s.h], [sc[0], t.y]] : [[sc[0], s.y], [sc[0], t.y + t.h]];
+  const yb = Math.max(s.y + s.h, t.y + t.h) + 24;      // quay lui: đi vòng phía dưới
+  return [[sc[0], s.y + s.h], [sc[0], yb], [tc[0], yb], [tc[0], t.y + t.h]];
+}
+
+function toXml(m) {
+  const P = "bpmn", type = n => n.type;
+  const inn = {}, out = {}; m.flows.forEach(f => { (out[f.src] = out[f.src] || []).push(f.id); (inn[f.tgt] = inn[f.tgt] || []).push(f.id); });
+  const laneIds = m.lanes.map((l, i) => l.id || `P1_Lane_${i + 1}`);
+  const H = m.lanes.reduce((a, l) => a + l.h, 0), W = m.width;
+  let x = `<?xml version="1.0" encoding="UTF-8"?>\n<${P}:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://text2bpmn/bpmn" exporter="text2BPMN" exporterVersion="2.0">\n`;
+  x += `  <${P}:collaboration id="P1_Collaboration_1" name="${esc(m.name)}">\n    <${P}:participant id="P1_Participant_1" name="${esc(m.name)}" processRef="P1_Process_1" />\n  </${P}:collaboration>\n`;
+  x += `  <${P}:process id="P1_Process_1" name="${esc(m.name)}" isExecutable="false">\n    <${P}:laneSet id="P1_LaneSet_1">\n`;
+  m.lanes.forEach((l, i) => { x += `      <${P}:lane id="${laneIds[i]}" name="${esc(l.name)}">\n`; Object.values(m.nodes).filter(n => n.lane === l.name).forEach(n => x += `        <${P}:flowNodeRef>${n.id}</${P}:flowNodeRef>\n`); x += `      </${P}:lane>\n`; });
+  x += `    </${P}:laneSet>\n`;
+  Object.values(m.nodes).forEach(n => {
+    x += `    <${P}:${type(n)} id="${n.id}" name="${esc(n.name)}">\n`;
+    (inn[n.id] || []).forEach(f => x += `      <${P}:incoming>${f}</${P}:incoming>\n`);
+    (out[n.id] || []).forEach(f => x += `      <${P}:outgoing>${f}</${P}:outgoing>\n`);
+    x += `    </${P}:${type(n)}>\n`;
+  });
+  m.flows.forEach(f => x += `    <${P}:sequenceFlow id="${f.id}"${f.name ? ` name="${esc(f.name)}"` : ""} sourceRef="${f.src}" targetRef="${f.tgt}" />\n`);
+  x += `  </${P}:process>\n  <bpmndi:BPMNDiagram id="P1_BPMNDiagram_1">\n    <bpmndi:BPMNPlane id="P1_BPMNPlane_1" bpmnElement="P1_Collaboration_1">\n`;
+  const b = (X, Y, w, h) => `<dc:Bounds x="${Math.round(X)}" y="${Math.round(Y)}" width="${Math.round(w)}" height="${Math.round(h)}" />`;
+  x += `      <bpmndi:BPMNShape id="P1_Participant_1_di" bpmnElement="P1_Participant_1" isHorizontal="true">${b(POOL_X, m.lanes[0].y, W, H)}</bpmndi:BPMNShape>\n`;
+  m.lanes.forEach((l, i) => x += `      <bpmndi:BPMNShape id="${laneIds[i]}_di" bpmnElement="${laneIds[i]}" isHorizontal="true">${b(LANE_X, l.y, W - (LANE_X - POOL_X), l.h)}</bpmndi:BPMNShape>\n`);
+  Object.values(m.nodes).forEach(n => x += `      <bpmndi:BPMNShape id="${n.id}_di" bpmnElement="${n.id}"${n.type === "exclusiveGateway" ? ' isMarkerVisible="true"' : ""}>${b(n.x, n.y, n.w, n.h)}</bpmndi:BPMNShape>\n`);
+  m.flows.forEach(f => { x += `      <bpmndi:BPMNEdge id="${f.id}_di" bpmnElement="${f.id}">`; route(m, f).forEach(p => x += `<di:waypoint x="${Math.round(p[0])}" y="${Math.round(p[1])}" />`); x += `</bpmndi:BPMNEdge>\n`; });
+  x += `    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</${P}:definitions>\n`;
+  return x;
+}
+
+/* ---------- Danh sách bước (cú pháp dòng) ---------- */
+const KIND = { start: "startEvent", end: "endEvent", task: "task", user: "userTask", service: "serviceTask", manual: "manualTask", script: "scriptTask", xor: "exclusiveGateway", and: "parallelGateway", or: "inclusiveGateway" };
+const PREFIX = { startEvent: "StartEvent", endEvent: "EndEvent", task: "Task", userTask: "UserTask", serviceTask: "ServiceTask", manualTask: "ManualTask", scriptTask: "ScriptTask", exclusiveGateway: "Gateway", parallelGateway: "Gateway", inclusiveGateway: "Gateway" };
+const KIND_OF = Object.fromEntries(Object.entries(KIND).map(([k, v]) => [v, k]));
+
+function parseDsl(text) {
+  const m = { name: "Quy trình", lanes: [], nodes: {}, flows: [] }, errs = [], short = {};
+  let curLane = null, nflow = 0;
+  const q = s => (s.match(/"([^"]*)"/g) || []).map(x => x.slice(1, -1));
+  text.split("\n").forEach((raw, k) => {
+    const line = raw.replace(/#.*$/, "").trim(); if (!line) return;
+    const ln = k + 1;
+    let mm;
+    if ((mm = line.match(/^process\s+"([^"]*)"/i))) { m.name = mm[1]; return; }
+    if ((mm = line.match(/^lane\s+"([^"]*)"/i))) { if (!m.lanes.some(l => l.name === mm[1])) m.lanes.push({ id: `P1_Lane_${m.lanes.length + 1}`, name: mm[1] }); curLane = mm[1]; return; }
+    if ((mm = line.match(/^([\w.-]+)\s*->\s*([\w.-]+)\s*(?:"([^"]*)")?\s*$/))) { m.flows.push({ id: `P1_Flow_${++nflow}`, src: mm[1], tgt: mm[2], name: mm[3] || "" }); return; }
+    if ((mm = line.match(/^(\w+)\s+([\w.-]+)\s+"([^"]*)"(?:\s+lane\s+"([^"]*)")?\s*$/i)) && KIND[mm[1].toLowerCase()]) {
+      const type = KIND[mm[1].toLowerCase()], lane = mm[4] || curLane || "Người thực hiện";
+      if (!m.lanes.some(l => l.name === lane)) m.lanes.push({ id: `P1_Lane_${m.lanes.length + 1}`, name: lane });
+      if (mm[4]) curLane = lane;
+      const id = `P1_${PREFIX[type]}_${mm[2]}`; short[mm[2]] = id;
+      const [w, h] = SIZE(type);
+      m.nodes[id] = { id, type, name: mm[3], lane, w, h };
+      return;
+    }
+    errs.push(`Dòng ${ln}: không hiểu “${line}”.`);
+  });
+  m.flows.forEach(f => { const a = short[f.src], b = short[f.tgt]; if (!a) errs.push(`Luồng ${f.src} -> ${f.tgt}: chưa khai báo “${f.src}”.`); if (!b) errs.push(`Luồng ${f.src} -> ${f.tgt}: chưa khai báo “${f.tgt}”.`); f.src = a || f.src; f.tgt = b || f.tgt; });
+  if (!Object.keys(m.nodes).length) errs.push("Chưa có bước nào.");
+  if (!m.lanes.length) m.lanes.push({ id: "P1_Lane_1", name: "Người thực hiện" });
+  return { model: m, errors: errs };
+}
+function toDsl(m) {
+  const sid = n => n.id.replace(/^P\d+_[A-Za-z]+_/, "") || n.id;
+  const lines = [`process "${m.name}"`];
+  m.lanes.forEach(l => { lines.push(`lane "${l.name}"`); Object.values(m.nodes).filter(n => n.lane === l.name).forEach(n => lines.push(`${KIND_OF[n.type] || "task"} ${sid(n)} "${n.name}"`)); });
+  m.flows.forEach(f => m.nodes[f.src] && m.nodes[f.tgt] && lines.push(`${sid(m.nodes[f.src])} -> ${sid(m.nodes[f.tgt])}${f.name ? ` "${f.name}"` : ""}`));
+  return lines.join("\n");
+}
+
+/* ---------- Văn bản → danh sách bước bằng quy tắc (dùng khi không gọi được mô hình ngôn ngữ) ---------- */
+const VERBS = ["sửa chữa", "sửa", "vận chuyển", "phân loại", "hoàn tiền", "hoàn trả", "đổi", "cài đặt", "quyết định", "họp", "kiểm", "theo dõi", "đóng", "mở", "xem xét", "kiểm tra", "phê duyệt", "phỏng vấn", "sàng lọc", "xác nhận", "thông báo", "ghi nhận", "thanh toán", "cập nhật", "đánh giá", "tiếp nhận", "hoàn tất", "liên hệ", "thẩm định", "bàn giao", "đóng gói", "phân công", "đăng ký", "yêu cầu", "chấp thuận", "xử lý", "rà soát", "ban hành", "từ chối", "lập", "ghi", "gửi", "nộp", "duyệt", "soạn", "xuất", "giao", "báo", "nhận", "tạo", "ký", "đặt", "lưu", "chuyển", "trả", "in", "tính", "điền", "thu", "nhập", "trình", "cấp", "mua", "chi", "đối chiếu", "lên lịch", "mời", "đề xuất", "tổng hợp", "phản hồi", "soát", "chuẩn bị", "khám", "đo", "bán"].sort((a, b) => b.length - a.length);
+function splitActor(cl) {
+  const low = cl.toLowerCase(); let pos = -1;
+  for (const v of VERBS) { const re = new RegExp(`(^|\\s)${v}(?=\\s|$)`, "u"); const r = re.exec(low); if (r) { const p = r.index + r[1].length; if (pos < 0 || p < pos) pos = p; } }
+  if (pos < 0) return { actor: "", action: cl.trim() };
+  return { actor: cl.slice(0, pos).trim().replace(/\s+(sẽ|cần|phải|được|tiến hành|thực hiện)$/i, "").trim(), action: cl.slice(pos).trim() };
+}
+function textToDsl(text) {
+  const sents = text.replace(/\r/g, "").split(/(?<=[.!?;])\s+|\n+/).map(s => s.trim().replace(/[.!?;]+$/, "")).filter(Boolean);
+  const lanes = [], nodes = [], flows = [], cnt = {};
+  const id = p => `${p}${cnt[p] = (cnt[p] || 0) + 1}`;
+  let lastActor = "Người thực hiện", cur = [], started = false;
+  const stack = [];                                     // cổng XOR đang mở: {id, lane, branches:[tails], open}
+  const lane = a => { const n = cap(a || lastActor); if (a) lastActor = n; if (!lanes.includes(n)) lanes.push(n); return n; };
+  const add = (kind, name, ln) => { const k = id({ start: "s", end: "e", task: "t", service: "v", xor: "x", and: "a" }[kind]); nodes.push({ k, kind, name, lane: ln }); return k; };
+  const link = (to) => { cur.forEach(c => flows.push([c.k, to, c.label || ""])); cur = [{ k: to }]; };
+  const laneOfNode = k => nodes.find(n => n.k === k)?.lane || lastActor;
+  const isSys = a => /hệ thống|phần mềm|tự động|website|ứng dụng/i.test(a);
+  const mkTask = a => add(isSys(a.actor + " " + a.action) ? "service" : "task", cap(a.action), lane(a.actor));
+  const doAction = (cl) => {
+    // các đoạn nối bằng "sau đó/rồi/tiếp theo" chạy nối tiếp; đoạn có "song song/đồng thời" tách thành nhánh song song
+    cl.split(/\s*,?\s+(?:sau đó|rồi|tiếp theo|tiếp đó)\s+/i).forEach(seg => {
+      const parallel = /song song|đồng thời|cùng lúc/i.test(seg);
+      const parts = seg.replace(/\s*(song song|đồng thời|cùng lúc)\s*/gi, " ").trim().split(/\s*,\s*|\s+và\s+/).filter(Boolean);
+      const acts = []; let actor = "";
+      parts.forEach(p => { const r = splitActor(p.replace(/^(thì|cuối cùng)\s+/i, "")); if (r.actor) actor = r.actor; if (r.action) acts.push({ actor: r.actor || actor, action: r.action }); });
+      if (!started && acts.length) { const a = acts.shift(); cur = [{ k: add("start", cap(a.action), lane(a.actor)) }]; started = true; }
+      if (!acts.length) return;
+      if (parallel && acts.length > 1) {
+        const split = add("and", "Song song", laneOfNode(cur[0]?.k)); link(split);
+        const join = add("and", "Hội tụ", laneOfNode(split));
+        acts.forEach(a => { const k = mkTask(a); flows.push([split, k, ""]); flows.push([k, join, ""]); });
+        cur = [{ k: join }];
+      } else acts.forEach(a => link(mkTask(a)));
+    });
+  };
+  const neg = l => /^(không|từ chối|hết|sai|thiếu|chưa|bị|trượt|ngược lại)/i.test(l);
+  const closeTop = () => { const top = stack.pop(); if (top.open) top.branches.push(cur); cur = top.branches.flat(); };  // đuôi các nhánh lồng thành đuôi nhánh cha
+  const openBranch = (top, label) => { if (top.open) top.branches.push(cur); top.labels.push(label); top.open = true; cur = [{ k: top.id, label }]; };
+  sents.forEach(s => {
+    let mm;
+    if (/^(sau đó|cuối cùng|sau cùng|khi xong)[,\s]/i.test(s) && stack.length) {   // các nhánh gặp lại nhau
+      const ln = stack[stack.length - 1].lane; closeTop(); link(add("xor", "", ln));
+      s = s.replace(/^(sau đó|cuối cùng|sau cùng|khi xong)[,\s]+/i, "");
+    }
+    if ((mm = s.match(/^(nếu không|ngược lại|còn không)\s*(?:thì\s+|,\s*)(.*)$/i)) && stack.length) {
+      while (stack.length > 1 && stack[stack.length - 1].labels.length >= 2) closeTop();
+      openBranch(stack[stack.length - 1], "Không"); doAction(mm[2]); return;
+    }
+    if ((mm = s.match(/^nếu\s+(.+?)(?:\s+thì\s+|\s*,\s*)(.+)$/i))) {
+      const cond = mm[1].trim(); let label = cond;
+      lanes.forEach(l => { if (label.toLowerCase().startsWith(l.toLowerCase() + " ")) label = label.slice(l.length).trim(); });
+      label = cap(label);
+      // nhánh thứ hai của một cổng đang mở khi chiều điều kiện ngược với nhánh đầu ("đồng ý" / "từ chối")
+      const k = [...stack].reverse().findIndex(g => g.labels.length === 1 && neg(g.labels[0]) !== neg(label));
+      if (k >= 0) { for (let i = 0; i < k; i++) closeTop(); openBranch(stack[stack.length - 1], label); }
+      else {
+        const ln = laneOfNode(cur[0]?.k), g = add("xor", cap(cond.replace(/^(không|chưa)\s+/i, "")) + "?", ln);
+        started = true; link(g); stack.push({ id: g, lane: ln, branches: [], labels: [label], open: true }); cur = [{ k: g, label }];
+      }
+      doAction(mm[2]); return;
+    }
+    doAction(s);
+  });
+  while (stack.length) closeTop();
+  // Mỗi đuôi kết thúc bằng một sự kiện kết thúc; bước "nhận thông báo…/hoàn tất…" cuối nhánh chính là điểm kết thúc.
+  const outs = new Set(flows.map(f => f[0]));
+  const tails = [...new Set(cur.map(c => c.k))];
+  tails.forEach(k => {
+    const n = nodes.find(x => x.k === k);
+    if (n && n.kind === "task" && /^(nhận|hoàn tất|kết thúc)/i.test(n.name) && !outs.has(k) && cur.filter(c => c.k === k).every(c => !c.label)) { n.kind = "end"; const nk = id("e"); flows.forEach(f => { if (f[1] === k) f[1] = nk; }); n.k = nk; }
+    else { const e = add("end", "Kết thúc", n ? n.lane : lastActor); cur.filter(c => c.k === k).forEach(c => flows.push([k, e, c.label || ""])); }
+  });
+  if (!nodes.length) return "";
+  const kindWord = { start: "start", end: "end", task: "task", service: "service", xor: "xor", and: "and" };
+  const lines = [`process "Quy trình mới"`];
+  lanes.forEach(l => { lines.push(`lane "${l}"`); nodes.filter(n => n.lane === l).forEach(n => lines.push(`${kindWord[n.kind]} ${n.k} "${n.name}"`)); });
+  flows.forEach(([a, b, lb]) => lines.push(`${a} -> ${b}${lb ? ` "${lb}"` : ""}`));
+  return lines.join("\n");
+}
+
+/* ---------- Kiểm tra nhanh (giống bộ Validator của Phần 1, chi tiết hơn ở Bước 1 của Phần 2) ---------- */
+function lint(m) {
+  const out = {}, inn = {}, msgs = [];
+  Object.keys(m.nodes).forEach(i => { out[i] = []; inn[i] = []; });
+  m.flows.forEach(f => { out[f.src]?.push(f); inn[f.tgt]?.push(f); });
+  const N = Object.values(m.nodes), name = n => `“${n.name || n.id}”`;
+  if (!N.some(n => n.type === "startEvent")) msgs.push(["Thiếu điểm bắt đầu", "Không có startEvent."]);
+  if (!N.some(n => n.type === "endEvent")) msgs.push(["Thiếu điểm kết thúc", "Không có endEvent."]);
+  N.forEach(n => {
+    if (TASK_TYPES.includes(n.type) && out[n.id].length > 1) msgs.push(["Rẽ nhánh ngầm", `${name(n)} có ${out[n.id].length} luồng ra không qua cổng: các nhánh chạy song song.`]);
+    if (TASK_TYPES.includes(n.type) && inn[n.id].length > 1) msgs.push(["Hội tụ ngầm", `${name(n)} có ${inn[n.id].length} luồng vào không qua cổng: bước có thể chạy nhiều lần.`]);
+    if (n.type === "exclusiveGateway" && out[n.id].length > 1) {
+      const labels = out[n.id].map(f => f.name.trim().toLowerCase());
+      const dup = labels.filter((l, i) => l && labels.indexOf(l) !== i);
+      if (dup.length) msgs.push(["Nhãn nhánh trùng", `Cổng ${name(n)} có hai nhánh cùng nhãn “${out[n.id].find(f => f.name.trim().toLowerCase() === dup[0]).name}”.`]);
+      if (labels.some(l => !l)) msgs.push(["Nhánh chưa có nhãn", `Cổng ${name(n)} có nhánh không ghi điều kiện.`]);
+    }
+    if (SYSTEM_TYPES.includes(n.type) && !/h[eệ]\s*_?th[oố]ng|system|tự động/i.test(n.lane)) msgs.push(["Việc hệ thống trong làn của người", `${name(n)} là việc của hệ thống nhưng nằm ở làn “${n.lane}”.`]);
+    if (n.type !== "startEvent" && !inn[n.id].length) msgs.push(["Phần tử không có luồng vào", name(n)]);
+    if (n.type !== "endEvent" && !out[n.id].length) msgs.push(["Đường cụt", `${name(n)} không dẫn tới đâu.`]);
+  });
+  m.flows.forEach(f => { if (/nhãn nhánh|câu hỏi\?|việc chung/i.test(f.name)) msgs.push(["Nhãn giữ chỗ", `Luồng ${f.id} còn nhãn mẫu “${f.name}”.`]); });
+  N.forEach(n => { if (/^(việc chung|câu hỏi\?|nhãn nhánh)$/i.test(n.name)) msgs.push(["Nhãn giữ chỗ", `${name(n)} còn tên mẫu.`]); });
+  return msgs;
+}
+
+/* ============================================================
+   Vẽ sơ đồ (SVG) – kéo thả, đổi làn, sửa tên
+   ============================================================ */
+const view = { m: null, fit: true, sel: null };
+function wrapText(t, maxChars) {
+  const words = (t || "").split(/\s+/), lines = []; let l = "";
+  words.forEach(w => { if ((l + " " + w).trim().length > maxChars && l) { lines.push(l); l = w; } else l = (l + " " + w).trim(); });
+  if (l) lines.push(l); return lines.slice(0, 4);
+}
+function textBlock(g, lines, x, y, anchor = "middle", size = 12) {
+  const t = sv("text", { x, y, "text-anchor": anchor, "font-size": size, fill: "var(--dg-stroke)", "font-family": "var(--font-sans)" });
+  lines.forEach((ln, i) => { const s = sv("tspan", { x, dy: i ? size * 1.25 : 0 }); s.textContent = ln; t.append(s); });
+  g.append(t); return t;
+}
+function draw() {
+  const m = view.m, frame = $("#frame");
+  if (!m) return;
+  const H = m.lanes.reduce((a, l) => a + l.h, 0), W = m.width, top = m.lanes[0].y;
+  const vbW = W + POOL_X + 20, vbH = H + top + 30;
+  let svg = view.svg;
+  if (!svg || !frame.contains(svg)) { svg = view.svg = sv("svg", { role: "img" }); frame.replaceChildren(svg); frame.classList.add("has"); bindDrag(svg); }
+  svg.replaceChildren();
+  svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`); svg.setAttribute("aria-label", `Sơ đồ BPMN: ${m.name}`);
+  if (view.fit) { svg.setAttribute("width", "100%"); svg.removeAttribute("height"); } else { svg.setAttribute("width", vbW); svg.setAttribute("height", vbH); }
+  const defs = sv("defs"); const mk = sv("marker", { id: "arw", viewBox: "0 0 10 10", refX: 10, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" });
+  mk.append(sv("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--dg-stroke)" })); defs.append(mk); svg.append(defs);
+  const stroke = { stroke: "var(--dg-stroke)", "stroke-width": 1.5, fill: "var(--dg-fill)" };
+  // bể và làn
+  svg.append(sv("rect", { x: POOL_X, y: top, width: W, height: H, ...stroke, fill: "var(--dg-lane)" }));
+  const pl = sv("g"); textBlock(pl, [m.name], 0, 0, "middle", 13).setAttribute("transform", `translate(${POOL_X + 19},${top + H / 2}) rotate(-90)`); svg.append(pl);
+  m.lanes.forEach(l => {
+    svg.append(sv("rect", { x: LANE_X, y: l.y, width: W - (LANE_X - POOL_X), height: l.h, ...stroke, fill: "none" }));
+    svg.append(sv("line", { x1: LANE_X + 30, y1: l.y, x2: LANE_X + 30, y2: l.y + l.h, stroke: "var(--dg-stroke)", "stroke-width": 1 }));
+    const g = sv("g"); textBlock(g, wrapText(l.name, Math.max(8, Math.floor(l.h / 8))), 0, 0, "middle", 12).setAttribute("transform", `translate(${LANE_X + 19},${l.y + l.h / 2}) rotate(-90)`); svg.append(g);
+  });
+  // luồng
+  m.flows.forEach(f => {
+    const pts = route(m, f); if (pts.length < 2) return;
+    svg.append(sv("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: "var(--dg-stroke)", "stroke-width": 1.4, "marker-end": "url(#arw)" }));
+    if (f.name) { const a = pts[0], b = pts[1]; const g = sv("g"); textBlock(g, [f.name], (a[0] + b[0]) / 2 + (a[0] === b[0] ? 6 : 0), Math.min(a[1], b[1]) - 6 + (a[0] === b[0] ? 18 : 0), a[0] === b[0] ? "start" : "middle", 11.5); svg.append(g); }
+  });
+  // phần tử
+  Object.values(m.nodes).forEach(n => {
+    const g = sv("g", { class: "node" + (view.sel === n.id ? " sel" : ""), "data-id": n.id, tabindex: 0 });
+    const cx = n.x + n.w / 2, cy = n.y + n.h / 2;
+    if (n.type.endsWith("Event")) {
+      g.append(sv("circle", { cx, cy, r: n.w / 2, ...stroke, "stroke-width": n.type === "endEvent" ? 4 : 1.8 }));
+      textBlock(g, wrapText(n.name, 18), cx, n.y + n.h + 16, "middle", 11.5);
+    } else if (n.type.endsWith("Gateway")) {
+      g.append(sv("path", { class: "shape", d: `M${cx},${n.y} L${n.x + n.w},${cy} L${cx},${n.y + n.h} L${n.x},${cy} Z`, ...stroke }));
+      const s = 9;
+      if (n.type === "parallelGateway") g.append(sv("path", { d: `M${cx - s},${cy} H${cx + s} M${cx},${cy - s} V${cy + s}`, stroke: "var(--dg-stroke)", "stroke-width": 3 }));
+      else if (n.type === "exclusiveGateway" && n.name !== "") g.append(sv("path", { d: `M${cx - 7},${cy - 7} L${cx + 7},${cy + 7} M${cx + 7},${cy - 7} L${cx - 7},${cy + 7}`, stroke: "var(--dg-stroke)", "stroke-width": 3 }));
+      if (n.name) textBlock(g, wrapText(n.name, 20), cx, n.y - 22 - (wrapText(n.name, 20).length - 1) * 14, "middle", 11.5);
+    } else {
+      g.append(sv("rect", { x: n.x, y: n.y, width: n.w, height: n.h, rx: 10, ...stroke }));
+      const lines = wrapText(n.name, 19);
+      textBlock(g, lines, cx, cy - (lines.length - 1) * 7.5 + 4, "middle", 12.5);
+      if (n.type === "userTask") g.append(sv("path", { d: `M${n.x + 10},${n.y + 24} a6,6 0 0 1 12,0 Z M${n.x + 16},${n.y + 9} m-4,4 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0`, ...stroke, "stroke-width": 1.2 }));
+      if (SYSTEM_TYPES.includes(n.type)) { const c = sv("g", { transform: `translate(${n.x + 16},${n.y + 16})` }); c.append(sv("circle", { r: 7, ...stroke, "stroke-width": 1.2 })); c.append(sv("circle", { r: 2.5, ...stroke, "stroke-width": 1.2 })); [0, 45, 90, 135].forEach(a => c.append(sv("line", { x1: 0, y1: -9, x2: 0, y2: 9, stroke: "var(--dg-stroke)", "stroke-width": 1.2, transform: `rotate(${a})` }))); g.append(c); }
+    }
+    svg.append(g);
+  });
+}
+function bindDrag(svg) {
+  let drag = null;
+  const pt = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+  svg.addEventListener("pointerdown", e => {
+    const g = e.target.closest(".node"); if (!g) return;
+    const n = view.m.nodes[g.dataset.id], p = pt(e);
+    drag = { n, dx: p.x - n.x, dy: p.y - n.y, moved: false, lane: n.lane };
+    view.sel = n.id; svg.setPointerCapture(e.pointerId);
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return; const p = pt(e), m = view.m, n = drag.n;
+    const nx = Math.max(LANE_X + 40, p.x - drag.dx), ny = p.y - drag.dy;
+    if (Math.abs(nx - n.x) + Math.abs(ny - n.y) < 1) return;
+    n.x = nx; n.y = ny; drag.moved = true;
+    const cy = n.y + n.h / 2, ln = m.lanes.find(l => cy >= l.y && cy < l.y + l.h) || (cy < m.lanes[0].y ? m.lanes[0] : m.lanes[m.lanes.length - 1]);
+    n.lane = ln.name; n.y = Math.min(Math.max(n.y, ln.y + 8), ln.y + ln.h - n.h - (n.type.endsWith("Event") ? 26 : 8));
+    m.width = Math.max(m.width, n.x + n.w + 70 - POOL_X);
+    draw();
+  });
+  const end = () => { if (drag && drag.moved) onModelChange(drag.lane !== drag.n.lane ? `Đã chuyển “${drag.n.name}” sang làn ${drag.n.lane}.` : ""); drag = null; };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+  svg.addEventListener("dblclick", e => { const g = e.target.closest(".node"); if (g) rename(view.m.nodes[g.dataset.id], g); });
+  svg.addEventListener("keydown", e => { const g = e.target.closest(".node"); if (g && e.key === "Enter") rename(view.m.nodes[g.dataset.id], g); });
+}
+function rename(n, g) {
+  const frame = $("#frame"), r = g.getBoundingClientRect(), fr = frame.getBoundingClientRect();
+  const inp = el("input", { class: "rename", type: "text", "aria-label": "Tên bước" });
+  inp.value = n.name;
+  Object.assign(inp.style, { left: `${r.left - fr.left + frame.scrollLeft - 10}px`, top: `${r.top - fr.top + frame.scrollTop + r.height / 2 - 16}px`, width: `${Math.max(160, r.width + 20)}px` });
+  frame.append(inp); inp.focus(); inp.select();
+  let done = false;
+  const commit = ok => { if (done) return; done = true; const v = inp.value.trim(); inp.remove(); if (ok && v && v !== n.name) { n.name = v; onModelChange(`Đã đổi tên thành “${v}”.`); } };
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") commit(true); if (e.key === "Escape") commit(false); });
+  inp.addEventListener("blur", () => commit(true));
+}
+
+/* ============================================================
+   Trạng thái và điều phối Phần 1
+   ============================================================ */
+const state = { sims: {}, sampleKey: null, ownLogs: [] };
+const EXAMPLES = {
+  "quy-trinh-nghi-phep": { label: "Nghỉ phép", text: "Nhân viên gửi đơn nghỉ phép. Quản lý xem xét đơn. Nếu quản lý đồng ý, nhân sự ghi nhận nghỉ phép và nhân viên nhận thông báo đã duyệt. Nếu từ chối, quản lý ghi lý do từ chối và nhân viên nhận thông báo từ chối." },
+  "quy-trinh-dat-hang": { label: "Đơn hàng", text: "Khách đặt hàng trên website. Hệ thống kiểm tra tồn kho. Nếu còn hàng, kho soạn hàng và kế toán xuất hóa đơn song song, sau đó giao cho khách. Nếu hết hàng, hệ thống báo hết hàng cho khách." },
+  "quy-trinh-tuyen-dung": { label: "Tuyển dụng", text: "Ứng viên nộp hồ sơ. Bộ phận tuyển dụng sàng lọc hồ sơ. Nếu không đạt, ứng viên nhận thư từ chối. Nếu đạt, trưởng bộ phận phỏng vấn. Nếu trúng tuyển, nhân sự gửi offer và ứng viên xác nhận offer. Nếu không trúng, nhân sự gửi thư từ chối." },
+};
+const norm = s => s.replace(/\s+/g, " ").trim().toLowerCase();
+
+function setModel(m, msg, sampleKey = null) {
+  view.m = m; view.sel = null; state.sampleKey = sampleKey; state.fileStem = null;
+  $("#dsl").value = toDsl(m);
+  ["#fit", "#dl-bpmn", "#redraw", "#sim-ok", "#sim-bad"].forEach(s => $(s).disabled = false);
+  draw(); showLint(); resetSims(); refreshP2();
+  if (msg) $("#draw-status").textContent = msg;
+}
+function onModelChange(msg) {
+  $("#dsl").value = toDsl(view.m); state.sampleKey = null; draw(); showLint();
+  if (Object.keys(state.sims).length) { resetSims(); msg = (msg ? msg + " " : "") + "Sơ đồ đã đổi: chạy lại bước 3."; }
+  refreshP2();
+  if (msg) $("#draw-status").textContent = msg;
+}
+function showLint() {
+  const ul = $("#lint"), msgs = lint(view.m); ul.hidden = false;
+  ul.replaceChildren(...(msgs.length ? msgs.map(([a, b]) => el("li", {}, el("b", { text: a + ": " }), b)) : [el("li", { class: "ok", text: "Kiểm tra nhanh: đủ điểm bắt đầu, kết thúc; cổng có nhãn nhánh; không có đường cụt." })]));
+}
+
+async function drawFromText() {
+  const text = $("#text").value.trim(); if (!text) return;
+  const st = $("#draw-status"); st.className = "status"; $("#draw").disabled = true;
+  try {
+    const hit = Object.entries(EXAMPLES).find(([k, v]) => norm(v.text) === norm(text) && SAMPLES[k]);
+    if (hit) { setModel(parseBpmn(SAMPLES[hit[0]]), "Ví dụ này dùng đúng tệp BPMN text2BPMN đã sinh (chưa sửa lỗi).", hit[0]); return; }
+    if (/^\s*process\s+"/i.test(text)) return fromDsl(text);
+    let dsl = null, how = "";
+    const sample = await claudeUse("sample");
+    if (sample) {
+      st.textContent = "Đang nhờ Claude chuyển văn bản thành danh sách bước…";
+      try {
+        const r = await sample(DSL_PROMPT.replace("{TEXT}", text), { modelTier: "default" });
+        const cand = (r.text.match(/```(?:\w+)?\n([\s\S]*?)```/) || [null, r.text])[1].trim();
+        if (!parseDsl(cand).errors.length) { dsl = cand; how = "Claude chuyển văn bản thành danh sách bước."; }
+      } catch (e) { /* dùng bộ quy tắc */ }
+    }
+    if (!dsl) { dsl = textToDsl(text); how = "Chuyển bằng bộ quy tắc (câu “Nếu …”, “… và … song song”). Mở Sửa danh sách bước nếu sơ đồ chưa đúng."; }
+    const { model, errors } = parseDsl(dsl);
+    if (errors.length) throw new Error(errors.join(" "));
+    autoLayout(model); setModel(model, how);
+  } catch (e) { st.className = "status err"; st.textContent = e.message; }
+  finally { $("#draw").disabled = !$("#text").value.trim(); }
+}
+const DSL_PROMPT = `Chuyển mô tả quy trình dưới đây thành danh sách bước theo đúng cú pháp sau, mỗi dòng một khai báo, không giải thích:
+process "Tên quy trình"
+lane "Vai trò"                       (mỗi vai trò/bộ phận một làn)
+start s1 "Tên sự kiện bắt đầu"
+task t1 "Việc" | user u1 "Việc của người" | service v1 "Việc của hệ thống"
+xor x1 "Câu hỏi?"   (rẽ nhánh loại trừ)    and a1 "Song song"   (tách/hợp song song)
+end e1 "Tên kết thúc"
+t1 -> x1              x1 -> u1 "Nhãn nhánh"
+Quy tắc: phần tử thuộc làn khai báo gần nhất phía trên; mỗi cổng xor có ít nhất hai nhánh, nhãn khác nhau; việc làm song song thì tách và hợp bằng and; mọi nhánh kết thúc bằng end; tên bước là động từ + đối tượng, giữ nguyên từ ngữ của văn bản.
+Ví dụ:
+process "Quy trình nghỉ phép"
+lane "Nhân viên"
+start s1 "Gửi đơn nghỉ phép"
+end e1 "Nhận thông báo đã duyệt"
+end e2 "Nhận thông báo từ chối"
+lane "Quản lý"
+task t1 "Xem xét đơn"
+xor x1 "Quản lý đồng ý?"
+task t2 "Ghi lý do từ chối"
+lane "Nhân sự"
+user u1 "Ghi nhận nghỉ phép"
+s1 -> t1
+t1 -> x1
+x1 -> u1 "Đồng ý"
+x1 -> t2 "Từ chối"
+u1 -> e1
+t2 -> e2
+Mô tả cần chuyển:
+{TEXT}`;
+function fromDsl(text) {
+  const { model, errors } = parseDsl(text);
+  const st = $("#dsl-status");
+  if (errors.length) { st.className = "status err"; st.textContent = errors.slice(0, 3).join(" "); return; }
+  st.className = "status"; st.textContent = "";
+  autoLayout(model); setModel(model, "Đã vẽ lại từ danh sách bước.");
+}
+
+/* ============================================================
+   Bước 3: mô phỏng như text2BPMN (chỉ thời gian làm việc, chưa có hàng đợi)
+   Tham số trùng với kịch bản S1, S2 của Phần 2 để hai phần đối chiếu được.
+   ============================================================ */
+const SCEN = {
+  viec_suon_se: { label: "Việc suôn sẻ", p_positive: 0.9, p_rework: 0.05, gap: 40, seed: 42 },
+  nhieu_truc_trac: { label: "Nhiều trục trặc", p_positive: 0.3, p_rework: 0.33, gap: 40, seed: 43 },
+};
+const MINUTES = { task: 20, userTask: 30, manualTask: 30, serviceTask: 5, scriptTask: 2, sendTask: 5, receiveTask: 10, businessRuleTask: 5 };
+const T0 = Date.UTC(2026, 2, 2, 8, 0, 0);
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const lognorm = (r, mean) => { const z = Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r()); return Math.exp(Math.log(mean) - 0.08 + 0.4 * z); };
+function simulate(m, key, n) {
+  const sc = SCEN[key], out = {}, inn = {}, rows = [], cases = [];
+  Object.keys(m.nodes).forEach(i => { out[i] = []; inn[i] = []; });
+  m.flows.forEach(f => { out[f.src]?.push(f); inn[f.tgt]?.push(f); });
+  const starts = Object.values(m.nodes).filter(x => x.type === "startEvent");
+  for (let i = 0; i < n; i++) {
+    const r = rng(sc.seed * 100003 + i), cid = `${key}_${String(i).padStart(4, "0")}`, t0 = T0 + i * sc.gap * 60000;
+    const q = starts.map((s, k) => [t0, k, s.id]); let seq = q.length, steps = 0, rework = 0, endName = null, work = 0;
+    const joins = {};
+    while (q.length && steps < 500) {
+      q.sort((a, b) => a[0] - b[0] || a[1] - b[1]); const [t, , id] = q.shift(); steps++;
+      const node = m.nodes[id]; if (!node) continue;
+      let next = out[id].slice(), tOut = t;
+      if (TASK_TYPES.includes(node.type)) {
+        let reps = 1; while (r() < sc.p_rework && reps < 4) reps++;
+        rework += reps - 1;
+        for (let k = 0; k < reps; k++) {
+          const d = lognorm(r, MINUTES[node.type] || 20) * 60000;
+          rows.push([cid, node.name, tOut, tOut + d, SYSTEM_TYPES.includes(node.type) ? "Hệ thống" : node.lane, node.lane]);
+          work += d; tOut += d;
+        }
+      } else if (node.type === "exclusiveGateway" && next.length > 1) {
+        const pos = next.map(f => isPositive(f.name)), np = pos.filter(Boolean).length;
+        const w = np && np < pos.length ? pos.map(p => p ? sc.p_positive / np : (1 - sc.p_positive) / (pos.length - np)) : pos.map(() => 1 / pos.length);
+        let u = r(), k = 0; while (k < w.length - 1 && u > w[k]) { u -= w[k]; k++; }
+        next = [next[k]];
+      } else if (node.type === "parallelGateway" && inn[id].length > 1) {
+        joins[id] = (joins[id] || 0) + 1; if (joins[id] < inn[id].length) continue; joins[id] = 0;
+      } else if (node.type === "endEvent") { endName = node.name || "Kết thúc"; continue; }
+      next.forEach(f => q.push([tOut, seq++, f.tgt]));
+    }
+    cases.push({ cid, work: work / 60000, rework, end: endName || "Chưa kết thúc" });
+  }
+  rows.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[2] - b[2]);
+  return { key, label: sc.label, rows, cases };
+}
+function resetSims() { state.sims = {}; $("#sims").replaceChildren(); renderLogPreview(); }
+function runSim(key) {
+  const n = Math.min(1000, Math.max(20, +$("#ncases").value || 200));
+  const s = simulate(view.m, key, n); state.sims[key] = s;
+  $(`#sim-${key === "viec_suon_se" ? "ok" : "bad"}`).setAttribute("aria-pressed", "true");
+  renderSims(); renderLogPreview(); refreshP2();
+}
+function simStats(s) {
+  const by = {}; s.rows.forEach(r => by[r[1]] = (by[r[1]] || 0) + (r[3] - r[2]) / 60000);
+  const tot = Object.values(by).reduce((a, b) => a + b, 0) || 1;
+  const share = Object.entries(by).map(([k, v]) => [k, v / tot]).sort((a, b) => b[1] - a[1]);
+  const ends = {}; s.cases.forEach(c => ends[c.end] = (ends[c.end] || 0) + 1);
+  return { work: s.cases.reduce((a, c) => a + c.work, 0) / s.cases.length, share, ends, rework2: s.cases.filter(c => c.rework >= 2).length, stuck: s.cases.filter(c => c.end === "Chưa kết thúc").length };
+}
+function renderSims() {
+  const box = $("#sims"); box.replaceChildren();
+  Object.values(state.sims).forEach(s => {
+    const st = simStats(s);
+    box.append(el("div", { class: "sim" },
+      el("h3", { text: `${s.label} · ${s.cases.length} hồ sơ` }),
+      el("div", {}, el("div", { class: "small muted", text: "Một hồ sơ xong trong (thời gian làm việc)" }), el("div", { class: "big", text: `${nf.format(st.work)} phút` })),
+      el("div", { class: "bars" }, st.share.map(([k, v]) => el("div", { class: "bar" }, el("div", { class: "t" }, el("i", { style: `width:${Math.max(2, v * 100)}%` }), el("span", { text: k })), el("span", { class: "v", text: pct(v) })))),
+      el("dl", { class: "kv" },
+        el("dt", { text: "Tốn thời gian nhất" }), el("dd", { text: `${st.share[0]?.[0] ?? "–"} (${st.share[0] ? pct(st.share[0][1]) : "–"})` }),
+        el("dt", { text: "Làm lại từ 2 lần" }), el("dd", { text: `${st.rework2} hồ sơ` }),
+        el("dt", { text: "Kết thúc tại" }), el("dd", { text: Object.entries(st.ends).map(([k, v]) => `${k}: ${v}`).join(" · ") }),
+        ...(st.stuck ? [el("dt", { text: "Không kết thúc" }), el("dd", { text: `${st.stuck} hồ sơ (sơ đồ có vòng lặp hoặc đường cụt)` })] : []))));
+  });
+}
+
+/* ============================================================
+   Bước 4: nhật ký CSV / XES và tải về
+   ============================================================ */
+const fmt = t => { const d = new Date(Math.round(t / 1000) * 1000); const p = x => String(x).padStart(2, "0"); return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`; };
+const csvCell = v => /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+const toCsv = s => ["case_id,activity,start_ts,end_ts,resource,role", ...s.rows.map(r => [r[0], r[1], fmt(r[2]), fmt(r[3]), r[4], r[5]].map(csvCell).join(","))].join("\n") + "\n";
+function toXes(s) {
+  const iso = t => fmt(t).replace(" ", "T") + ".000+00:00";
+  const by = {}; s.rows.forEach(r => (by[r[0]] = by[r[0]] || []).push(r));
+  let x = `<?xml version="1.0" encoding="UTF-8"?>\n<log xes.version="1.0" xes.features="nested-attributes" xmlns="http://www.xes-standard.org/">\n  <extension name="Concept" prefix="concept" uri="http://www.xes-standard.org/concept.xesext"/>\n  <extension name="Time" prefix="time" uri="http://www.xes-standard.org/time.xesext"/>\n  <extension name="Lifecycle" prefix="lifecycle" uri="http://www.xes-standard.org/lifecycle.xesext"/>\n  <extension name="Organizational" prefix="org" uri="http://www.xes-standard.org/org.xesext"/>\n  <string key="concept:name" value="${esc(s.label)}"/>\n`;
+  Object.entries(by).forEach(([cid, rs]) => {
+    x += `  <trace>\n    <string key="concept:name" value="${cid}"/>\n`;
+    rs.forEach(r => ["start", "complete"].forEach((lc, k) => x += `    <event><string key="concept:name" value="${esc(r[1])}"/><string key="lifecycle:transition" value="${lc}"/><date key="time:timestamp" value="${iso(k ? r[3] : r[2])}"/><string key="org:resource" value="${esc(r[4])}"/><string key="org:role" value="${esc(r[5])}"/></event>\n`));
+    x += `  </trace>\n`;
+  });
+  return x + `</log>\n`;
+}
+function renderLogPreview() {
+  const box = $("#log-preview"), sims = Object.values(state.sims);
+  $("#dl-csv").disabled = $("#dl-zip").disabled = !sims.length;
+  if (!sims.length) { box.replaceChildren(el("p", { class: "waiting", text: "Chạy ít nhất một kịch bản ở bước 3 để có nhật ký." })); return; }
+  const s = sims[0];
+  box.replaceChildren(
+    el("p", { class: "small", text: sims.map(x => `${x.key}.csv: ${x.rows.length} dòng, ${x.cases.length} hồ sơ`).join(" · ") }),
+    el("div", { class: "tbl" }, el("table", {}, el("thead", {}, el("tr", {}, ["case_id", "activity", "start_ts", "end_ts", "resource", "role"].map(c => el("th", { text: c })))),
+      el("tbody", {}, s.rows.slice(0, 6).map(r => el("tr", {}, [r[0], r[1], fmt(r[2]), fmt(r[3]), r[4], r[5]].map(v => el("td", { text: v }))))))));
+}
+/* Tệp zip tối giản (không nén) để gom BPMN + nhật ký thành một tệp tải về */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], cent = []; let off = 0;
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = typeof f.data === "string" ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30)); [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [8, 0, 2], [10, 0, 2], [12, 0x21, 2], [14, crc, 4], [18, data.length, 4], [22, data.length, 4], [26, name.length, 2], [28, 0, 2]].forEach(([o, v, s]) => s === 4 ? h.setUint32(o, v, true) : h.setUint16(o, v, true));
+    const c = new DataView(new ArrayBuffer(46)); [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [10, 0, 2], [12, 0, 2], [14, 0x21, 2], [16, crc, 4], [20, data.length, 4], [24, data.length, 4], [28, name.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, off, 4]].forEach(([o, v, s]) => s === 4 ? c.setUint32(o, v, true) : c.setUint16(o, v, true));
+    parts.push(new Uint8Array(h.buffer), name, data); cent.push(new Uint8Array(c.buffer), name); off += 30 + name.length + data.length;
+  });
+  const size = cent.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
+  [[0, 0x06054b50, 4], [8, files.length, 2], [10, files.length, 2], [12, size, 4], [16, off, 4]].forEach(([o, v, s]) => s === 4 ? e.setUint32(o, v, true) : e.setUint16(o, v, true));
+  return new Blob([...parts, ...cent, new Uint8Array(e.buffer)], { type: "application/zip" });
+}
+async function saveFile(filename, data, type = "text/plain") {
+  const blob = data instanceof Blob ? data : new Blob([data], { type });
+  const dl = await claudeUse("downloads");
+  if (dl) {
+    const ok = /\.(csv|zip|txt|json|html|svg|pdf)$/i.test(filename);
+    const name = ok ? filename : filename + ".zip";
+    const payload = ok ? blob : zip([{ name: filename, data: new Uint8Array(await blob.arrayBuffer()) }]);
+    try { await dl.save({ filename: name, data: payload }); } catch (e) { if (e && e.code !== "declined") $("#draw-status").textContent = "Không tải được tệp trong trang này."; }
+    return;
+  }
+  const a = el("a", { href: URL.createObjectURL(blob), download: filename }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const bpmnName = () => (state.sampleKey || state.fileStem || slug(view.m.name)) + ".bpmn";
+
+/* ============================================================
+   PHẦN 2
+   ============================================================ */
 const STEPS = [
-  ["Kiểm tra BPMN", "BPMN có hợp lệ về hành vi (sound) không?", "Đọc XML, chuyển sang mạng Petri, chạy Woflan và dò 5 mẫu lỗi hay gặp."],
-  ["Event log", "Lấy nhật ký ở đâu và nhật ký có sạch không?", "Đọc log text2BPMN nếu có; nếu không, mô phỏng token trên BPMN với hồ sơ đến theo thời gian và 1 người mỗi làn."],
-  ["Thống kê mô tả", "Quy trình chạy nhanh hay chậm, thời gian chờ chiếm bao nhiêu?", "Tính thời gian làm việc, thời gian lưu trú, tỷ lệ trễ hạn và biến thể theo kịch bản."],
-  ["Khám phá", "Chỉ nhìn log, quy trình thực tế trông ra sao?", "Vẽ DFG; chạy Alpha, Heuristics và Inductive Miner; chấm fitness, precision, generalization, simplicity."],
-  ["Tuân thủ", "Vận hành lệch khỏi BPMN ở đâu, mức nào?", "Alignment với BPMN AS-IS theo biến thể; đếm log move, model move; kiểm tra luật nghiệp vụ."],
-  ["Điểm nghẽn", "Hồ sơ bị giữ lại ở đâu?", "Tách thời gian chờ và xử lý; xếp hạng theo tổng phút chờ; tính mức tải từng làn."],
-  ["Nguyên nhân", "Đặc điểm nào gắn với việc trễ hạn?", "Cây quyết định sâu 3 trên số hồ sơ tồn lúc nộp, số lần làm lại và kết quả hồ sơ."],
-  ["TO-BE", "Sửa gì thì tốt hơn thật, nhờ thay đổi nào?", "Sinh BPMN TO-BE, mô phỏng lại 10 lần trên cùng dòng hồ sơ, kiểm định Wilcoxon, ablation từng thay đổi."],
+  ["Kiểm tra BPMN", "Mô hình có chạy đúng không, hay vẽ được nhưng sai hành vi?", "Chuyển BPMN sang mạng Petri, kiểm tra soundness (Woflan) và dò 5 mẫu lỗi hay gặp."],
+  ["Nhật ký", "Nhật ký của Phần 1 có dùng được không, và cần bổ sung gì?", "Đối chiếu nhật ký Phần 1, rồi mô phỏng 4 kịch bản có hồ sơ đến theo thời gian và số người mỗi làn."],
+  ["Thống kê", "Hồ sơ mất bao lâu, bao nhiêu là chờ, bao nhiêu hồ sơ trễ hạn?", "Thời gian làm việc, thời gian lưu trú, tỷ lệ trễ hạn và biến thể theo kịch bản."],
+  ["Khám phá", "Chỉ nhìn nhật ký, quy trình thực tế trông ra sao?", "DFG; Alpha, Heuristics, Inductive Miner; chấm fitness, precision, generalization, simplicity."],
+  ["Tuân thủ", "Vận hành lệch khỏi BPMN ở đâu, mức nào?", "Alignment với BPMN; đếm bước bị bỏ, bước làm thừa; kiểm tra luật nghiệp vụ."],
+  ["Điểm nghẽn", "Hồ sơ bị giữ lại ở bước nào, làn nào?", "Tách thời gian chờ và xử lý; xếp hạng theo tổng phút chờ; mức tải từng làn."],
+  ["Nguyên nhân", "Đặc điểm nào đi kèm với trễ hạn?", "Cây quyết định sâu 3 trên số hồ sơ tồn lúc nộp, số lần làm lại, kết quả hồ sơ."],
+  ["BPMN cải tiến", "Sửa gì thì nhanh hơn thật, nhờ thay đổi nào?", "Sinh BPMN TO-BE, mô phỏng lại 10 lần trên cùng dòng hồ sơ, kiểm định Wilcoxon, tách tác dụng từng thay đổi."],
 ];
 const COLS = { so_ho_so: "Số hồ sơ", so_bien_the: "Số biến thể", lam_viec_tb: "Làm việc TB (phút)", cycle_tb: "Lưu trú TB (phút)",
   cycle_p90: "Lưu trú P90 (phút)", ty_le_tre_han: "Tỷ lệ trễ hạn", lam_lai_tb: "Làm lại TB", scenario: "Kịch bản", thuat_toan: "Thuật toán",
@@ -173,147 +853,178 @@ const COLS = { so_ho_so: "Số hồ sơ", so_bien_the: "Số biến thể", lam_
   chi_tiet: "Chi tiết", type: "Loại", name: "Tên", id: "ID", vet: "Vết", so_lan: "Số lần", variant: "Biến thể", ty_le: "Tỷ lệ",
   mean: "Tỷ lệ trễ hạn", size: "Số hồ sơ", n_lam_lai: "Số lần làm lại", ton_luc_nop: "Hồ sơ tồn lúc nộp", tu: "Từ", den: "Đến", nhan: "Nhãn",
   index: "", case_id: "Hồ sơ", enable_ts: "Sẵn sàng", start_ts: "Bắt đầu", end_ts: "Kết thúc", resource: "Người thực hiện", role: "Làn",
-  task_type: "Loại task", ket_qua: "Kết quả", sai_lech: "Sai lệch" };
-const PCT = new Set(["ty_le_tre_han", "khop_hoan_toan", "ty_trong_cho", "ty_trong_lam_viec", "ty_le", "mean", "tre_han"]);
-const $ = s => document.querySelector(s);
-const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v); } kids.flat().forEach(k => k != null && e.append(k)); return e; };
-const nf = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 3 });
-const DEMO = window.DEMO || null;
-let current = { steps: [], img: f => "", files: null };
+  task_type: "Loại task", ket_qua: "Kết quả", sai_lech: "Sai lệch", log_text2bpmn: "Nhật ký Phần 1", kich_ban_phan2: "Kịch bản Phần 2",
+  ho_so_text2bpmn: "Hồ sơ", lam_viec_text2bpmn: "Làm việc Phần 1 (phút)", lam_viec_phan2: "Làm việc Phần 2 (phút)", chenh_lech: "Chênh lệch" };
+const PCT = new Set(["ty_le_tre_han", "khop_hoan_toan", "ty_trong_cho", "ty_trong_lam_viec", "ty_le", "mean", "tre_han", "chenh_lech"]);
+let p2 = { steps: [], img: () => "", files: null, error: false };
 
 function buildFlow() {
   const flow = $("#flow");
-  flow.append(el("span", { class: "ev", title: "Bắt đầu: BPMN + log", "aria-hidden": "true" }));
+  flow.append(el("span", { class: "ev", title: "Bắt đầu: BPMN và nhật ký từ Phần 1", "aria-hidden": "true" }));
   STEPS.forEach(([t], i) => {
     flow.append(el("span", { class: "arrow", "aria-hidden": "true" }));
-    const b = el("button", { class: "task", type: "button", id: `task-${i + 1}`, "data-state": "pending" },
-      el("span", { class: "k", text: `Bước ${i + 1}` }), el("span", { class: "t", text: t }));
+    const b = el("button", { class: "task", type: "button", id: `task-${i + 1}`, "data-state": "pending" }, el("span", { class: "k", text: `Bước ${i + 1}` }), el("span", { class: "t", text: t }));
     b.addEventListener("click", () => $(`#step-${i + 1}`).scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
     flow.append(b);
   });
   flow.append(el("span", { class: "arrow", "aria-hidden": "true" }), el("span", { class: "ev end", title: "Kết thúc: BPMN TO-BE", "aria-hidden": "true" }));
 }
-
 function renderTable(t, open) {
-  const pctTable = /vi phạm|Tỷ trọng thời gian/.test(t.title);
-  const head = el("tr", {}, t.columns.map(c => el("th", { text: COLS[c] ?? c })));
-  const body = t.rows.map(r => el("tr", {}, r.map((v, j) => {
-    const c = t.columns[j];
-    if (typeof v === "number") {
-      const asPct = PCT.has(c) || (pctTable && j > 0);
-      return el("td", { class: "n", text: asPct ? nf.format(Math.round(v * 1000) / 10) + "%" : nf.format(v) });
-    }
-    return el("td", { text: v == null ? "–" : String(v) });
-  })));
-  const d = el("details", {}, el("summary", { text: `${t.title} · ${t.rows.length} dòng` }),
-    el("div", { class: "tbl" }, el("table", {}, el("thead", {}, head), el("tbody", {}, body))));
+  const pctTable = /vi phạm|Tỷ trọng|tỷ trọng/.test(t.title);
+  const d = el("details", { class: "box" }, el("summary", { text: `${t.title} · ${t.rows.length} dòng` }),
+    el("div", { class: "tbl" }, el("table", {}, el("thead", {}, el("tr", {}, t.columns.map(c => el("th", { text: COLS[c] ?? c })))),
+      el("tbody", {}, t.rows.map(r => el("tr", {}, r.map((v, j) => {
+        const c = t.columns[j];
+        if (typeof v === "number") return el("td", { class: "n", text: (PCT.has(c) || (pctTable && j > 0 && !/phút|lam_viec|ho_so/.test(c))) ? pct(v) : nf3.format(v) });
+        return el("td", { text: v == null ? "–" : String(v) });
+      })))))));
   if (open) d.open = true;
   return d;
 }
-
-function renderStep(i, data, state) {
-  const [title, q] = STEPS[i - 1];
-  const sec = el("section", { class: "step", id: `step-${i}` },
-    el("div", { class: "step-head" }, el("span", { class: "num", text: `Bước ${i}` }), el("h2", { text: data?.name || title }), el("p", { class: "q", text: q })));
-  if (!data) {
-    sec.append(el("p", { class: "waiting", text: state === "running" ? "Đang chạy…" : `Chưa chạy. ${STEPS[i - 1][2]}` }));
-    return sec;
-  }
-  sec.append(el("dl", { class: "facts" }, data.facts.map(f => el("div", { class: "fact" }, el("dt", { text: f.label }), el("dd", { text: typeof f.value === "number" ? nf.format(f.value) : f.value })))));
+function renderStep(i, data, st) {
+  const [title, q, how] = STEPS[i - 1];
+  const sec = el("section", { class: "card", id: `step-${i}` },
+    el("div", { class: "card-head" }, el("div", {}, el("h2", {}, el("span", { class: "num", text: `Bước ${i}` }), title), el("p", { class: "small muted", text: q }))));
+  if (!data) { sec.append(el("p", { class: "waiting", text: st === "running" ? "Đang chạy…" : how })); return sec; }
+  sec.append(el("dl", { class: "facts" }, data.facts.map(f => el("div", { class: "fact" }, el("dt", { text: f.label }), el("dd", { text: typeof f.value === "number" ? nf3.format(f.value) : f.value })))));
   if (data.notes.length) sec.append(el("ul", { class: "notes" }, data.notes.map(n => el("li", { text: n }))));
   if (data.legend) sec.append(el("div", { class: "legend" }, Object.entries(data.legend).map(([k, v]) => el("span", { text: `${k}: ${v}` }))));
-  if (data.images.length) sec.append(el("div", { class: "figs" }, data.images.map(im => el("figure", {},
-    el("div", { class: "im" }, el("img", { src: current.img(im.file), alt: im.label, loading: "lazy" })), el("figcaption", { text: im.label })))));
+  if (data.images.length) sec.append(el("div", { class: "figs" }, data.images.map(im => el("figure", {}, el("div", { class: "im" }, el("img", { src: p2.img(im.file), alt: im.label, loading: "lazy" })), el("figcaption", { text: im.label })))));
   data.tables.forEach((t, k) => sec.append(renderTable(t, k === 0)));
-  if (data.code) sec.append(el("details", {}, el("summary", { text: "Luật của cây quyết định" }), el("pre", { text: data.code })));
-  if (data.downloads && current.files) sec.append(el("div", { class: "dl" }, data.downloads.map(f => el("a", { class: "btn", href: current.files(f), text: `Tải ${f}` }))));
+  if (data.code) sec.append(el("details", { class: "box" }, el("summary", { text: "Luật của cây quyết định" }), el("pre", { text: data.code })));
+  if (data.downloads && p2.files) sec.append(el("div", { class: "row" }, data.downloads.map(f => el("a", { class: "btn", href: p2.files(f), text: `Tải ${f}` }))));
   return sec;
 }
-
-function renderAll(runningStep) {
-  const main = $("#steps"); main.replaceChildren();
+function renderP2(running) {
+  const box = $("#steps"); box.replaceChildren();
   for (let i = 1; i <= 8; i++) {
-    const data = current.steps.find(s => s.n === i);
-    const state = data ? "done" : (runningStep === i ? "running" : "pending");
-    $(`#task-${i}`).dataset.state = current.error && runningStep === i ? "error" : state;
-    main.append(renderStep(i, data, state));
+    const data = p2.steps.find(s => s.n === i), st = data ? "done" : (running === i ? "running" : "pending");
+    $(`#task-${i}`).dataset.state = p2.error && running === i ? "error" : st;
+    box.append(renderStep(i, data, st));
   }
 }
-
-/* ---------------- Chế độ trình diễn ---------------- */
-function startDemo() {
-  document.querySelectorAll(".live-only").forEach(e => e.hidden = true);
-  document.querySelectorAll(".demo-only").forEach(e => e.hidden = false);
-  const seg = $("#samples");
-  DEMO.processes.forEach((p, k) => {
-    const b = el("button", { type: "button", "aria-pressed": k === 0 ? "true" : "false", text: p.label });
-    b.addEventListener("click", () => { seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); showDemo(p); });
-    seg.append(b);
+let mode = "offline";                                   // "live" khi có máy chủ Python, "demo" khi có kết quả chạy sẵn
+function refreshP2() {
+  const ready = !!view.m, logs = Object.keys(state.sims).length;
+  $("#run-p2").disabled = !ready;
+  $("#p2-status").className = "status";
+  $("#p2-status").textContent = !ready ? "Cần sơ đồ ở bước 2." :
+    state.ownLogs.length ? `Đầu vào: ${bpmnName()} + ${state.ownLogs.length} nhật ký có sẵn (${state.ownLogs.map(f => f.name).join(", ")}), dùng trực tiếp.` :
+    `Đầu vào: ${bpmnName()}${logs ? ` + ${logs} nhật ký (${Object.keys(state.sims).join(", ")})` : " (chưa có nhật ký: Phần 2 tự mô phỏng)"}.`;
+  $("#p2-offline").hidden = true;
+}
+function signature(m) {
+  const N = m.nodes;
+  return JSON.stringify([Object.values(N).map(n => `${n.type}|${n.name}|${n.lane}`).sort(), m.flows.map(f => `${N[f.src]?.name}>${N[f.tgt]?.name}|${f.name}`).sort()]);
+}
+async function runP2() {
+  p2 = { steps: [], img: () => "", files: null, error: false }; $("#p2-downloads").replaceChildren(); renderP2(null);
+  if (mode === "live") return runLive();
+  const off = $("#p2-offline");
+  const hit = !state.ownLogs.length && DEMO && DEMO.processes.find(p => SAMPLES[p.key] && signature(parseBpmn(SAMPLES[p.key])) === signature(view.m));
+  if (hit) {
+    const steps = JSON.parse(JSON.stringify(hit.steps));
+    const s2 = steps.find(s => s.n === 2), s3 = steps.find(s => s.n === 3);
+    if (Object.keys(state.sims).length && s2 && s3) addCalibration(s2, s3);
+    p2 = { steps, img: f => hit.images[f] || "", files: null, error: false };
+    renderP2(null);
+    $("#p2-status").className = "status ok";
+    $("#p2-status").textContent = `Kết quả chạy sẵn bằng Python cho ${hit.bpmn} (200 hồ sơ mỗi kịch bản, 10 lần lặp).`;
+    return;
+  }
+  off.hidden = false;
+  off.replaceChildren(
+    el("p", { text: "Phần 2 chạy bằng Python (pm4py). Trang này đang mở không kèm máy chủ Python, nên chỉ có kết quả chạy sẵn cho ba sơ đồ ví dụ khi chưa sửa." }),
+    el("p", { text: "Để chạy trên sơ đồ của bạn: mở notebook của repo trên Colab và chạy ô “Giao diện web”. Trang mở ra giống trang này nhưng có Python đi kèm, nên Phần 2 chạy được với mọi sơ đồ. Trên máy cá nhân: python -m text2bpmn_mining.web." }));
+  $("#p2-status").textContent = "";
+}
+/* Bản trình diễn: tính bảng đối chiếu Phần 1 ↔ Phần 2 ngay trong trang (máy chủ Python tính đúng bảng này ở Bước 2). */
+function addCalibration(s2, s3) {
+  const kpi = s3.tables.find(t => /KPI/.test(t.title)), share = s3.tables.find(t => /Tỷ trọng/.test(t.title));
+  if (!kpi || !share) return;
+  const kWork = kpi.columns.indexOf("lam_viec_tb"), rowsW = [], cols = ["activity"], shareRows = {};
+  const p2key = k => k === "nhieu_truc_trac" ? "S2_truc_trac" : "S1_suon_se";
+  Object.values(state.sims).forEach(s => {
+    const st = simStats(s), p = p2key(s.key), kr = kpi.rows.find(r => r[0] === p);
+    const w2 = kr ? kr[kWork] : null;
+    rowsW.push([s.key, p, s.cases.length, Math.round(st.work * 10) / 10, w2, w2 ? Math.round((w2 - st.work) / st.work * 1000) / 1000 : null]);
+    cols.push(`${s.key} (Phần 1)`, `${p} (Phần 2)`);
+    const ci = share.columns.indexOf(p);
+    const acts = new Set([...st.share.map(x => x[0]), ...share.rows.map(r => r[0])]);
+    acts.forEach(a => { shareRows[a] = shareRows[a] || {}; shareRows[a][`${s.key} (Phần 1)`] = Math.round((st.share.find(x => x[0] === a)?.[1] || 0) * 1000) / 1000; shareRows[a][`${p} (Phần 2)`] = share.rows.find(r => r[0] === a)?.[ci] ?? 0; });
   });
-  showDemo(DEMO.processes[0]);
+  s2.facts[0].value = "bộ mô phỏng của Phần 2 (đã đối chiếu với nhật ký Phần 1)";
+  s2.notes.unshift(...rowsW.map(r => `${r[0]} ↔ ${r[1]}: làm việc ${nf.format(r[3])} phút (Phần 1) và ${r[4] != null ? nf.format(r[4]) : "–"} phút (Phần 2), lệch ${r[5] != null ? (r[5] >= 0 ? "+" : "") + pct(r[5]) : "–"}.`));
+  s2.notes.unshift("Nhật ký Phần 1 chỉ có thời gian làm việc, chưa có hàng đợi, nên dùng để đối chiếu; Phần 2 mô phỏng lại 4 kịch bản trên cùng BPMN, thêm hồ sơ đến theo thời gian và số người mỗi làn.");
+  s2.tables.unshift({ title: "Đối chiếu tỷ trọng thời gian từng bước", columns: cols, rows: Object.entries(shareRows).map(([a, v]) => [a, ...cols.slice(1).map(c => v[c] ?? 0)]) });
+  s2.tables.unshift({ title: "Đối chiếu thời gian làm việc mỗi hồ sơ với Phần 1", columns: ["log_text2bpmn", "kich_ban_phan2", "ho_so_text2bpmn", "lam_viec_text2bpmn", "lam_viec_phan2", "chenh_lech"], rows: rowsW });
 }
-function showDemo(p) {
-  current = { steps: p.steps, img: f => p.images[f] || "", files: null };
-  $("#status").textContent = `${p.process.replace(/_/g, " ")} · ${p.bpmn}`;
-  renderAll(null);
-}
-
-/* ---------------- Chế độ chạy thật ---------------- */
-let sample = "";
-async function startLive() {
-  const seg = $("#samples");
-  try {
-    const names = await (await fetch("api/samples")).json();
-    names.forEach((n, k) => {
-      const b = el("button", { type: "button", "aria-pressed": "false", text: n.replace(/\.bpmn$/, "") });
-      b.addEventListener("click", () => { seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); sample = n; $("#bpmn").value = ""; });
-      if (n.includes("nghi-phep") || (k === 0 && !sample)) { seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); sample = n; }
-      seg.append(b);
-    });
-  } catch { $("#status").textContent = "Không đọc được danh sách tệp mẫu; hãy tải lên tệp .bpmn."; }
-  $("#bpmn").addEventListener("change", () => { if ($("#bpmn").files.length) seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false")); });
-  $("#form").addEventListener("submit", run);
-  renderAll(null);
-}
-async function run(ev) {
-  ev.preventDefault();
-  const fd = new FormData();
-  if ($("#bpmn").files.length) fd.append("bpmn", $("#bpmn").files[0]); else fd.append("sample", sample);
-  [...$("#logs").files].forEach(f => fd.append("logs", f));
-  ["n_cases", "n_rep", "sla"].forEach(k => fd.append(k, $("#" + k).value));
-  const st = $("#status"); st.className = ""; st.textContent = "Đang gửi…"; $("#run").disabled = true; $("#downloads").replaceChildren();
-  current = { steps: [], img: f => "", files: null, error: null };
-  renderAll(null);
-  let res;
-  try { res = await fetch("api/run", { method: "POST", body: fd }); } catch { return fail("Không kết nối được máy chủ. Kiểm tra ô chạy giao diện web còn đang chạy."); }
-  const j = await res.json();
-  if (!res.ok) return fail(j.error || "Máy chủ từ chối yêu cầu.");
-  const id = j.id;
-  current.img = f => `api/job/${id}/file/${encodeURIComponent(f)}`;
-  current.files = current.img;
-  poll(id);
+async function runLive() {
+  const fd = new FormData(), xml = toXml(view.m);
+  fd.append("bpmn", new Blob([xml], { type: "application/xml" }), bpmnName());
+  if (state.ownLogs.length) { state.ownLogs.forEach(f => fd.append("logs", f, f.name)); fd.append("logs_as", "log"); }
+  else { Object.values(state.sims).forEach(s => fd.append("logs", new Blob([toCsv(s)], { type: "text/csv" }), `${s.key}.csv`)); fd.append("logs_as", "doi_chieu"); }
+  fd.append("n_cases", $("#p2-ncases").value); fd.append("n_rep", $("#p2-nrep").value); fd.append("sla", $("#p2-sla").value);
+  const st = $("#p2-status"); st.className = "status"; st.textContent = "Đang gửi…"; $("#run-p2").disabled = true;
+  let res; try { res = await fetch("api/run", { method: "POST", body: fd }); } catch { return failP2("Không kết nối được máy chủ Python. Kiểm tra ô chạy giao diện web còn chạy."); }
+  const j = await res.json(); if (!res.ok) return failP2(j.error || "Máy chủ từ chối yêu cầu.");
+  p2.img = f => `api/job/${j.id}/file/${encodeURIComponent(f)}`; p2.files = p2.img;
+  poll(j.id);
 }
 async function poll(id) {
-  let job;
-  try { job = await (await fetch(`api/job/${id}`)).json(); } catch { return setTimeout(() => poll(id), 1500); }
-  current.steps = job.steps;
-  const step = job.current || (job.status === "error" ? job.steps.length + 1 : null);
-  current.error = job.status === "error";
-  renderAll(step);
-  const st = $("#status");
-  if (job.status === "done") {
-    st.textContent = `Xong 8 bước · ${(job.process || "").replace(/_/g, " ")} · log: ${job.n_logs ? job.n_logs + " tệp của text2BPMN" : "mô phỏng"}`;
-    $("#downloads").replaceChildren(el("a", { class: "btn", href: `api/job/${id}/zip`, text: "Tải toàn bộ kết quả (.zip)" }));
-    $("#run").disabled = false;
-  } else if (job.status === "error") {
-    fail(`Lỗi ở bước ${step}: ${job.error}`);
-  } else {
-    st.textContent = job.current ? `Đang chạy bước ${job.current}/8: ${STEPS[job.current - 1][0]}…` : "Đang chờ…";
-    setTimeout(() => poll(id), 1000);
-  }
+  let job; try { job = await (await fetch(`api/job/${id}`)).json(); } catch { return setTimeout(() => poll(id), 1500); }
+  p2.steps = job.steps; p2.error = job.status === "error";
+  const step = job.current || (p2.error ? job.steps.length + 1 : null);
+  renderP2(step);
+  const st = $("#p2-status");
+  if (job.status === "done") { st.className = "status ok"; st.textContent = `Xong 8 bước · ${(job.process || "").replace(/_/g, " ")}`; $("#p2-downloads").replaceChildren(el("a", { class: "btn", href: `api/job/${id}/zip`, text: "Tải toàn bộ kết quả (.zip)" })); $("#run-p2").disabled = false; }
+  else if (p2.error) failP2(`Lỗi ở bước ${step}: ${job.error}`);
+  else { st.textContent = job.current ? `Đang chạy bước ${job.current}/8: ${STEPS[job.current - 1][0]}…` : "Đang chờ…"; setTimeout(() => poll(id), 1000); }
 }
-function fail(msg) { const st = $("#status"); st.className = "err"; st.textContent = msg; $("#run").disabled = false; }
+function failP2(msg) { const st = $("#p2-status"); st.className = "status err"; st.textContent = msg; $("#run-p2").disabled = false; }
 
-buildFlow();
-if (DEMO) startDemo(); else startLive();
+/* ============================================================
+   Khởi động
+   ============================================================ */
+function init() {
+  Object.entries(EXAMPLES).forEach(([k, v]) => {
+    const b = el("button", { class: "ghost", type: "button", text: v.label });
+    b.addEventListener("click", () => { $("#text").value = v.text; $("#draw").disabled = false; drawFromText(); });
+    $("#examples").append(b);
+  });
+  $("#text").addEventListener("input", () => $("#draw").disabled = !$("#text").value.trim());
+  $("#draw").addEventListener("click", drawFromText);
+  $("#example").addEventListener("click", () => { $("#text").value = EXAMPLES["quy-trinh-nghi-phep"].text; $("#draw").disabled = false; drawFromText(); });
+  $("#dsl").addEventListener("input", () => $("#redraw").disabled = !$("#dsl").value.trim());
+  $("#redraw").addEventListener("click", () => fromDsl($("#dsl").value));
+  $("#fit").addEventListener("click", () => { view.fit = !view.fit; $("#fit").textContent = view.fit ? "Cỡ thật" : "Vừa khung"; draw(); });
+  $("#dl-bpmn").addEventListener("click", () => saveFile(bpmnName(), toXml(view.m), "application/xml"));
+  $("#sim-ok").addEventListener("click", () => runSim("viec_suon_se"));
+  $("#sim-bad").addEventListener("click", () => runSim("nhieu_truc_trac"));
+  $("#dl-csv").addEventListener("click", () => Object.values(state.sims).forEach(s => saveFile(`${s.key}.csv`, toCsv(s), "text/csv")));
+  $("#dl-zip").addEventListener("click", () => {
+    const files = [{ name: bpmnName(), data: toXml(view.m) }];
+    Object.values(state.sims).forEach(s => files.push({ name: `${s.key}.csv`, data: toCsv(s) }, { name: `${s.key}.xes`, data: toXes(s) }));
+    saveFile(`${slug(view.m.name)}_bpmn_va_nhat_ky.zip`, zip(files));
+  });
+  $("#run-p2").addEventListener("click", runP2);
+  $("#open-bpmn").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { const xml = await f.text(); const key = Object.keys(SAMPLES).find(k => SAMPLES[k].trim() === xml.trim()) || null;
+      setModel(parseBpmn(xml), `Đã mở ${f.name}.`, key); if (!key) state.fileStem = f.name.replace(/\.(bpmn|xml)$/i, ""); refreshP2(); }
+    catch (err) { $("#draw-status").className = "status err"; $("#draw-status").textContent = err.message; }
+    e.target.value = "";
+  });
+  $("#own-logs").addEventListener("change", e => {
+    state.ownLogs = [...e.target.files];
+    $("#log-preview").prepend(el("p", { class: "small", text: state.ownLogs.length ? `Nhật ký có sẵn: ${state.ownLogs.map(f => f.name).join(", ")} — Phần 2 dùng trực tiếp thay cho nhật ký mô phỏng.` : "" }));
+    refreshP2();
+  });
+  buildFlow(); renderP2(null);
+  $("#fit").textContent = "Cỡ thật";
+  if (DEMO) { mode = "demo"; document.querySelectorAll(".live-only").forEach(e => e.hidden = true); $("#run-p2").textContent = "Xem kết quả Phần 2"; }
+  else fetch("api/samples").then(r => { if (r.ok) mode = "live"; else document.querySelectorAll(".live-only").forEach(e => e.hidden = true); })
+    .catch(() => document.querySelectorAll(".live-only").forEach(e => e.hidden = true));
+}
+init();
 </script>
