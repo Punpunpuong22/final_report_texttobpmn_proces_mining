@@ -193,8 +193,11 @@ x1 -> v1 "Không"</pre><p class="small muted" style="margin-top:6px">Phần tử
         <label class="small muted" style="display:flex;align-items:center;gap:8px">Số hồ sơ <input type="number" id="ncases" value="200" min="20" max="1000" style="width:96px"></label>
         <button id="sim-ok" type="button" disabled>Việc suôn sẻ</button>
         <button id="sim-bad" type="button" disabled>Nhiều trục trặc</button>
+        <span class="status" id="sim-note" role="status"></span>
       </div>
+      <p class="small muted">Việc suôn sẻ: 90% hồ sơ đi nhánh thuận (đạt, đồng ý, còn hàng), 5% khả năng làm lại mỗi bước. Nhiều trục trặc: chỉ 30% đi nhánh thuận, 33% khả năng làm lại.</p>
       <div class="sims" id="sims"></div>
+      <div class="note-box" id="sim-compare" hidden></div>
     </section>
 
     <section class="card" id="s4">
@@ -744,9 +747,10 @@ function simulate(m, key, n) {
   rows.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[2] - b[2]);
   return { key, label: sc.label, rows, cases };
 }
-function resetSims() { state.sims = {}; $("#sims").replaceChildren(); renderLogPreview(); }
+function resetSims() { state.sims = {}; $("#sims").replaceChildren(); $("#sim-compare").hidden = true; ["#sim-ok", "#sim-bad"].forEach(x => $(x).setAttribute("aria-pressed", "false")); renderLogPreview(); }
 function runSim(key) {
-  const n = Math.min(1000, Math.max(20, +$("#ncases").value || 200));
+  const raw = +$("#ncases").value || 200, n = Math.min(1000, Math.max(20, Math.round(raw)));
+  if (n !== raw) { $("#ncases").value = n; $("#sim-note").textContent = `Số hồ sơ cần từ 20 đến 1000; đã chạy ${n} hồ sơ.`; }
   const s = simulate(view.m, key, n); state.sims[key] = s;
   $(`#sim-${key === "viec_suon_se" ? "ok" : "bad"}`).setAttribute("aria-pressed", "true");
   renderSims(); renderLogPreview(); refreshP2();
@@ -756,10 +760,27 @@ function simStats(s) {
   const tot = Object.values(by).reduce((a, b) => a + b, 0) || 1;
   const share = Object.entries(by).map(([k, v]) => [k, v / tot]).sort((a, b) => b[1] - a[1]);
   const ends = {}; s.cases.forEach(c => ends[c.end] = (ends[c.end] || 0) + 1);
-  return { work: s.cases.reduce((a, c) => a + c.work, 0) / s.cases.length, share, ends, rework2: s.cases.filter(c => c.rework >= 2).length, stuck: s.cases.filter(c => c.end === "Chưa kết thúc").length };
+  const endWork = {}; s.cases.forEach(c => { endWork[c.end] = endWork[c.end] || [0, 0]; endWork[c.end][0]++; endWork[c.end][1] += c.work; });
+  Object.keys(endWork).forEach(k => endWork[k] = { n: endWork[k][0], work: endWork[k][1] / endWork[k][0] });
+  return { endWork, work: s.cases.reduce((a, c) => a + c.work, 0) / s.cases.length, share, ends, rework2: s.cases.filter(c => c.rework >= 2).length, stuck: s.cases.filter(c => c.end === "Chưa kết thúc").length };
+}
+function compareNote() {
+  const a = state.sims.viec_suon_se, b = state.sims.nhieu_truc_trac, box = $("#sim-compare");
+  if (!a || !b) { box.hidden = true; return; }
+  const A = simStats(a), B = simStats(b);
+  const same = Object.keys(A.endWork).filter(k => B.endWork[k] && A.endWork[k].n >= 3 && B.endWork[k].n >= 3);
+  const lines = same.map(k => `${k}: ${nf.format(A.endWork[k].work)} → ${nf.format(B.endWork[k].work)} phút`);
+  const kids = [];
+  if (B.work < A.work) {
+    const top = Object.entries(B.endWork).sort((x, y) => y[1].n - x[1].n)[0];
+    kids.push(el("p", {}, el("b", { text: "Vì sao “Nhiều trục trặc” có trung bình thấp hơn? " }),
+      `Trung bình gộp mọi hồ sơ. Ở kịch bản trục trặc, ${top[1].n}/${b.cases.length} hồ sơ dừng ở “${top[0]}”, nhánh ít bước hơn, nên con số chung giảm dù từng hồ sơ làm lâu hơn.`));
+  }
+  if (lines.length) kids.push(el("p", {}, el("b", { text: "So cùng kết quả (suôn sẻ → trục trặc): " }), lines.join(" · ")));
+  box.replaceChildren(...kids); box.hidden = !kids.length;
 }
 function renderSims() {
-  const box = $("#sims"); box.replaceChildren();
+  const box = $("#sims"); box.replaceChildren(); compareNote();
   Object.values(state.sims).forEach(s => {
     const st = simStats(s);
     box.append(el("div", { class: "sim" },
@@ -769,7 +790,7 @@ function renderSims() {
       el("dl", { class: "kv" },
         el("dt", { text: "Tốn thời gian nhất" }), el("dd", { text: `${st.share[0]?.[0] ?? "–"} (${st.share[0] ? pct(st.share[0][1]) : "–"})` }),
         el("dt", { text: "Làm lại từ 2 lần" }), el("dd", { text: `${st.rework2} hồ sơ` }),
-        el("dt", { text: "Kết thúc tại" }), el("dd", { text: Object.entries(st.ends).map(([k, v]) => `${k}: ${v}`).join(" · ") }),
+        el("dt", { text: "Theo kết quả" }), el("dd", {}, ...Object.entries(st.endWork).sort((a, b) => b[1].n - a[1].n).map(([k, v]) => el("div", { text: `${k}: ${v.n} hồ sơ · ${nf.format(v.work)} phút` }))),
         ...(st.stuck ? [el("dt", { text: "Không kết thúc" }), el("dd", { text: `${st.stuck} hồ sơ (sơ đồ có vòng lặp hoặc đường cụt)` })] : []))));
   });
 }
@@ -999,6 +1020,7 @@ function init() {
   $("#redraw").addEventListener("click", () => fromDsl($("#dsl").value));
   $("#fit").addEventListener("click", () => { view.fit = !view.fit; $("#fit").textContent = view.fit ? "Cỡ thật" : "Vừa khung"; draw(); });
   $("#dl-bpmn").addEventListener("click", () => saveFile(bpmnName(), toXml(view.m), "application/xml"));
+  $("#ncases").addEventListener("input", () => $("#sim-note").textContent = "");
   $("#sim-ok").addEventListener("click", () => runSim("viec_suon_se"));
   $("#sim-bad").addEventListener("click", () => runSim("nhieu_truc_trac"));
   $("#dl-csv").addEventListener("click", () => Object.values(state.sims).forEach(s => saveFile(`${s.key}.csv`, toCsv(s), "text/csv")));

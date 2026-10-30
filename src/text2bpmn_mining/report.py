@@ -95,14 +95,27 @@ def serialize_step(p, i: int) -> dict:
         k = s["kpi"]
         worst = k["cycle_tb"].idxmax()
         d["facts"] = [("Thời hạn (giả định)", f"{s['sla']} phút"), ("Kịch bản chậm nhất", worst),
-                      ("Lưu trú TB chậm nhất", f"{k.loc[worst, 'cycle_tb']:.1f} phút"),
+                      ("Lưu trú TB chậm nhất", f"{k.loc[worst, 'cycle_tb']:.1f} phút".replace(".", ",")),
                       ("Tỷ lệ trễ hạn", f"{k.loc[worst, 'ty_le_tre_han']:.0%}")]
         first = k.index[0]
         if k.loc[worst, "cycle_tb"] > 1.2 * k.loc[worst, "lam_viec_tb"]:
-            d["notes"].append(f"{worst}: làm việc {k.loc[worst, 'lam_viec_tb']:.1f} phút nhưng lưu trú {k.loc[worst, 'cycle_tb']:.1f} phút "
-                              f"(gấp {k.loc[worst, 'cycle_tb'] / k.loc[first, 'cycle_tb']:.1f} lần {first}): phần chênh là thời gian chờ.")
+            c = lambda x: f"{x:.1f}".replace(".", ",")
+            d["notes"].append(f"{worst}: làm việc {c(k.loc[worst, 'lam_viec_tb'])} phút nhưng lưu trú {c(k.loc[worst, 'cycle_tb'])} phút "
+                              f"(gấp {c(k.loc[worst, 'cycle_tb'] / k.loc[first, 'cycle_tb'])} lần {first}): phần chênh là thời gian chờ.")
         else:
             d["notes"].append("Thời gian lưu trú gần bằng thời gian làm việc: hầu như không có hàng đợi.")
+        # Trung bình gộp có thể đánh lừa: S2 nhiều hồ sơ dừng sớm ở nhánh ngược (ít bước) → so cùng kết quả
+        if {"S1_suon_se", "S2_truc_trac"} <= set(k.index) and "ket_qua" in p.cases:
+            by = p.cases.groupby(["scenario", "ket_qua"])["lam_viec_phut"].agg(["mean", "size"])
+            if k.loc["S2_truc_trac", "lam_viec_tb"] < k.loc["S1_suon_se", "lam_viec_tb"]:
+                d["notes"].append("S2 có thời gian làm việc trung bình thấp hơn S1 chỉ vì nhiều hồ sơ dừng sớm ở nhánh ngược (ít bước hơn); "
+                                  "so cùng kết quả thì S2 chậm hơn.")
+            same = [kq for kq in by.loc["S1_suon_se"].index if kq in by.loc["S2_truc_trac"].index
+                    and by.loc[("S1_suon_se", kq), "size"] >= 3 and by.loc[("S2_truc_trac", kq), "size"] >= 3]
+            if same:
+                vn = lambda x: f"{x:.1f}".replace(".", ",")
+                d["notes"].append("Làm việc theo cùng kết quả (S1 → S2): " + " · ".join(
+                    f"{kq}: {vn(by.loc[('S1_suon_se', kq), 'mean'])} → {vn(by.loc[('S2_truc_trac', kq), 'mean'])} phút" for kq in same))
         d["tables"] += [table(k, True, "KPI theo kịch bản (phút)"),
                         table(s["work_share"], True, "Tỷ trọng thời gian làm việc theo bước (để đối chiếu text2BPMN)"),
                         table(s["top_variants"], False, "Top-3 biến thể mỗi kịch bản")]
